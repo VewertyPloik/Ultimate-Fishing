@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Ultimate Fishing</title>
+    <title>3D FPS Mobile Fishing Game - Candy Island Update</title>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #5ca8ff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; touch-action: none; }
         #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
@@ -61,6 +61,7 @@
         .rarity-ExtraRare { color: #BA68C8; text-shadow: 0 0 8px rgba(186,104,200,0.5); } .rarity-Epic { color: #F06292; text-shadow: 0 0 12px rgba(240,98,146,0.6); } 
         .rarity-Legendary { color: #FFD54F; text-shadow: 0 0 15px rgba(255,213,79,0.8); } .rarity-Exotic { color: #00ffff; text-shadow: 0 0 20px rgba(0,255,255,1); font-weight: 900; letter-spacing: 1px; }
         .rarity-Mutant { color: #39ff14; text-shadow: 0 0 15px rgba(57,255,20,0.8); font-weight: 900; letter-spacing: 2px; }
+        .rarity-Candy { color: #ff66b2; text-shadow: 0 0 15px #ff66b2; font-weight: bold; letter-spacing: 1px; }
 
         #alert-box { position: absolute; top: 15%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); color: white; padding: 15px 30px; border-radius: 12px; font-size: 18px; font-weight: bold; text-align: center; display: none; pointer-events: none; z-index: 5; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
     </style>
@@ -209,23 +210,29 @@
         ['Golden Koi','Exotic',5000,'#ffd700','#fff',2,[0.6, 0.7, 1.2],1.8], ['Diamond Sturgeon','Exotic',6000,'#e0ffff','#fff',3,[0.6, 0.5, 1.6],2.5],
         ['Galactic Angler','Exotic',7500,'#000','#ff00ff',2,[0.7, 0.8, 1.2],2.0], ['Void Ray','Exotic',8000,'#111','#4b0082',3,[1.5, 0.1, 1.5],2.5],
         ['Nebula Dragonfish','Exotic',10000,'#ff1493','#00ffff',1,[0.4, 0.5, 2.2],3.0],
-        ['Mutant Fish','Mutant',15000,'#90ee90','#006400',2,[0.8, 0.7, 1.4],2.5],
-        ['Toxic Fish','Mutant',20000,'#ffff00','#00ff00',2,[0.7, 0.6, 1.3],2.2],
-        ['Mutant HornFish','Mutant',25000,'#90ee90','#006400',2,[0.8, 0.8, 1.5],2.8],
-        ['Nebula Mutant Fish','Mutant',50000,'#90ee90','#800080',4,[0.9, 0.8, 1.6],3.0],
-        ['Nebula Mutant HornFish','Mutant',100000,'#90ee90','#800080',4,[0.9, 0.9, 1.7],3.5]
+        ['Mutant Fish','Mutant',5000,'#90ee90','#006400',2,[0.8, 0.7, 1.4],2.5],
+        ['Toxic Fish','Mutant',7525,'#ffff00','#00ff00',2,[0.7, 0.6, 1.3],2.2],
+        ['Mutant HornFish','Mutant',8800,'#90ee90','#006400',2,[0.8, 0.8, 1.5],2.8],
+        ['Nebula Mutant Fish','Mutant',10000,'#90ee90','#800080',4,[0.9, 0.8, 1.6],3.0],
+        ['Nebula Mutant HornFish','Mutant',14500,'#90ee90','#800080',4,[0.9, 0.9, 1.7],3.5],
+        
+        ['Candy Fish','Candy',7500,'#ffb6c1','#add8e6',1,[0.6, 0.5, 1.2],1.0],
+        ['Chocolate Fish','Candy',8750,'#8b4513','#d2b48c',1,[0.7, 0.6, 1.3],1.2],
+        ['Candy Cane Fish','Candy',10000,'#ff0000','#ffffff',1,[0.5, 0.4, 1.5],1.1],
+        ['Sourfish','Candy',12000,'#4169e1','#00008b',2,[0.4, 0.5, 1.1],0.9],
+        ['Glowing Sourfish','Candy',15000,'#00ffff','#0000cd',2,[0.5, 0.6, 1.2],1.0]
     ];
 
     const fishDatabase = rawFishData.map(f => ({ 
         id: f[1], name: f[0], baseVal: f[2], c1: f[3], c2: f[4], pat: f[5], prop: f[6], 
-        scale: (f[1] === 'Common' || f[1] === 'Uncommon') ? f[7] * 0.25 : f[7] 
+        scale: (f[1] === 'Common' || f[1] === 'Uncommon') ? f[7] * 8.25 : f[7] 
     }));
     
     let fishIndex = {}; fishDatabase.forEach(f => fishIndex[f.name] = 0);
     
     let inventory = [], money = 0, bones = 0, totalCaughtCount = 0;
     
-    let ownsBiggerRod = false, ownsMouse = false, ownsGlow = false, ownsMutantIsland = false;
+    let ownsBiggerRod = false, ownsMouse = false, ownsGlow = false, ownsMutantIsland = false, ownsCandyIsland = false;
     let equipBiggerRod = false, equipMouse = false, equipGlow = false;
     let currentLocation = 'main'; 
     
@@ -236,7 +243,8 @@
         { id: 'Common', name: 'Common' }, { id: 'Uncommon', name: 'Uncommon' }, 
         { id: 'Rare', name: 'Rare' }, { id: 'ExtraRare', name: 'Extra Rare' }, 
         { id: 'Epic', name: 'Epic' }, { id: 'Legendary', name: 'Legendary' }, 
-        { id: 'Exotic', name: 'Exotic' }, { id: 'Mutant', name: 'Mutant' }
+        { id: 'Exotic', name: 'Exotic' }, { id: 'Mutant', name: 'Mutant' },
+        { id: 'Candy', name: 'Candy' }
     ];
 
     const rods = [
@@ -253,7 +261,7 @@
         const data = { 
             money, bones, inventory, fishIndex, totalCaughtCount, 
             rodsOwned: rods.map(r=>r.owned), currentRodIndex, 
-            ownsBiggerRod, ownsMouse, ownsGlow, ownsMutantIsland, currentLocation,
+            ownsBiggerRod, ownsMouse, ownsGlow, ownsMutantIsland, ownsCandyIsland, currentLocation,
             equipBiggerRod, equipMouse, equipGlow,
             topCatches, usedCodes
         };
@@ -274,11 +282,10 @@
                 currentRodIndex = data.currentRodIndex || 0;
                 
                 ownsBiggerRod = data.ownsBiggerRod || false; ownsMouse = data.ownsMouse || false; ownsGlow = data.ownsGlow || false; 
-                ownsMutantIsland = data.ownsMutantIsland || false; 
+                ownsMutantIsland = data.ownsMutantIsland || false; ownsCandyIsland = data.ownsCandyIsland || false;
                 equipBiggerRod = data.equipBiggerRod || false; equipMouse = data.equipMouse || false; equipGlow = data.equipGlow || false;
                 
                 currentLocation = data.currentLocation || 'main';
-                if(currentLocation === 'frozen') currentLocation = 'main'; 
                 topCatches = data.topCatches || [];
                 usedCodes = data.usedCodes || [];
             } catch(e) { console.error("Corrupted save data."); }
@@ -382,7 +389,7 @@
         ctx.clearRect(0,0,256,128); ctx.textAlign = 'center'; ctx.fillStyle = 'white';
         textLines.forEach((line, i) => {
             let color = 'white'; let fSize = fontSize;
-            if (line === "MUTANT ISLAND") color = '#39ff14';
+            if (line === "EXOTIC FERRIES") color = '#FFD700';
             if (i > 0) { fSize = fontSize - 6; if(color === 'white') color = '#ccc'; }
             ctx.font = `bold ${fSize}px Arial`; ctx.fillStyle = color; 
             ctx.shadowColor = "black"; ctx.shadowBlur = 4; ctx.lineWidth = 3; ctx.strokeStyle = "black"; 
@@ -394,9 +401,7 @@
 
     function updateSign() {
         if(activeSignSprite) travelSignGroup.remove(activeSignSprite);
-        let lines = ["MUTANT ISLAND"];
-        if (!ownsMutantIsland) lines.push("10,000 Bones");
-        else lines.push("UNLOCKED");
+        let lines = ["EXOTIC FERRIES", "Mutant & Candy"];
         activeSignSprite = generateTextSprite(lines, 24, 1.6);
         activeSignSprite.position.z = 0.12; travelSignGroup.add(activeSignSprite);
     }
@@ -413,10 +418,25 @@
     const mGlow = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x00c6ff, emissive: 0x00c6ff, emissiveIntensity: 2.0})); mGlow.rotation.x = Math.PI/2; mGlow.position.y = 0.2; mutantTeleporter.add(mGlow);
     mutantIslandGroup.add(mutantTeleporter);
 
+    // --- CANDY ISLAND GROUP ---
+    const candyIslandGroup = new THREE.Group();
+    scene.add(candyIslandGroup);
+    // Swapped pink material out for standard dock wood material!
+    const candyDockMat = dockWoodMat;
+    const candyDock = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), candyDockMat);
+    candyDock.receiveShadow = true; candyDock.castShadow = true; candyIslandGroup.add(candyDock);
+    const candyTeleporter = new THREE.Group(); candyTeleporter.position.set(0, 0.5, -5); 
+    // Matched pad base to mutant island
+    const cPad = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 32), new THREE.MeshStandardMaterial({color: 0x000000, metalness: 0.9})); cPad.position.y = 0.1; candyTeleporter.add(cPad);
+    // Matched ring to mutant island neon blue
+    const cGlow = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x00c6ff, emissive: 0x00c6ff, emissiveIntensity: 2.0})); cGlow.rotation.x = Math.PI/2; cGlow.position.y = 0.2; candyTeleporter.add(cGlow);
+    candyIslandGroup.add(candyTeleporter);
+
     // Apply Location visuals
     function applyLocationVisuals() {
         mainIslandGroup.visible = (currentLocation === 'main');
         mutantIslandGroup.visible = (currentLocation === 'mutant');
+        candyIslandGroup.visible = (currentLocation === 'candy');
 
         if(currentLocation === 'main') {
             water.material.color.setHex(0x0077dd); sand.material.color.setHex(0xdeb887);
@@ -424,6 +444,9 @@
         } else if (currentLocation === 'mutant') {
             water.material.color.setHex(0x90ee90); sand.material.color.setHex(0x002200);
             scene.background = new THREE.Color(0x204020); scene.fog = new THREE.FogExp2(0x204020, 0.03);
+        } else if (currentLocation === 'candy') {
+            water.material.color.setHex(0xff99cc); sand.material.color.setHex(0xffffff); // Pink water, sugar white sand
+            scene.background = new THREE.Color(0xffe6f2); scene.fog = new THREE.FogExp2(0xffe6f2, 0.02);
         }
     }
     applyLocationVisuals();
@@ -467,6 +490,14 @@
         const group = new THREE.Group();
         const mat = new THREE.MeshStandardMaterial({ map: generateFishPattern(fishData.c1, fishData.c2, fishData.pat), metalness: 0.2, roughness: 0.7 });
         
+        // Glow logic for specific fish
+        if (fishData.name === 'Glowing Sourfish') {
+            mat.emissive = new THREE.Color(0x00ffff);
+            mat.emissiveIntensity = 0.4; // Subtle base glow
+            const glowLight = new THREE.PointLight(0x00ffff, 1.0, 4);
+            group.add(glowLight);
+        }
+
         const bodyGeo = new THREE.SphereGeometry(1, 32, 16);
         const body = new THREE.Mesh(bodyGeo, mat); 
         body.scale.set(fishData.prop[0], fishData.prop[1], fishData.prop[2]); group.add(body);
@@ -602,6 +633,9 @@
         if (currentLocation === 'mutant') {
             const possibleFish = fishDatabase.filter(f => f.id === 'Mutant');
             targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
+        } else if (currentLocation === 'candy') {
+            const possibleFish = fishDatabase.filter(f => f.id === 'Candy');
+            targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
         } else {
             let mathExp = equipBiggerRod ? 2.2 : 2.5; 
             let caughtTier = Math.floor(rod.minTier + (Math.pow(Math.random(), mathExp) * ((rod.maxTier - rod.minTier) + 0.99))); 
@@ -677,22 +711,31 @@
     // --- TRAVEL LOGIC ---
     function openTravelMenu() {
         const grid = document.getElementById('travel-grid'); grid.innerHTML = '';
+        
         let mutantHTML = `<div class="card"><h3 style="color:#39ff14; margin:5px 0; font-size: 22px;">Mutant Island</h3><p style="font-size:14px; color:#aaa;">Toxic waters and rare mutants.</p>`;
         if(ownsMutantIsland) mutantHTML += `<button style="background: linear-gradient(135deg, #39ff14, #006400);" onclick="triggerTravel('mutant')">TRAVEL</button></div>`;
         else mutantHTML += `<button style="background: linear-gradient(135deg, #ba68c8, #7b1fa2);" onclick="buyIsland('mutant')">BUY (10K 🦴)</button></div>`;
         grid.innerHTML += mutantHTML;
+
+        let candyHTML = `<div class="card"><h3 style="color:#ff66b2; margin:5px 0; font-size: 22px;">Candy Island</h3><p style="font-size:14px; color:#aaa;">Sweet waters and sugar-rush fish.</p>`;
+        if(ownsCandyIsland) candyHTML += `<button style="background: linear-gradient(135deg, #ff66b2, #ff1493);" onclick="triggerTravel('candy')">TRAVEL</button></div>`;
+        else candyHTML += `<button style="background: linear-gradient(135deg, #ba68c8, #7b1fa2);" onclick="buyIsland('candy')">BUY (25K 🦴)</button></div>`;
+        grid.innerHTML += candyHTML;
+
         openModal('travel-modal');
     }
 
     window.buyIsland = function(island) {
-        if (bones >= 10000) { 
-            bones -= 10000; 
-            if(island === 'mutant') {
-                ownsMutantIsland = true;
-                showAlert("Mutant Island Unlocked!", "#38ef7d");
-            }
-            updateSign(); saveGame(); updateHUD(); openTravelMenu(); 
-        } else { showAlert("Not enough bones!", "#ff4444"); }
+        if(island === 'mutant') {
+            if (bones >= 10000) { 
+                bones -= 10000; ownsMutantIsland = true; showAlert("Mutant Island Unlocked!", "#38ef7d");
+            } else { showAlert("Not enough bones!", "#ff4444"); return; }
+        } else if (island === 'candy') {
+            if (bones >= 25000) { 
+                bones -= 25000; ownsCandyIsland = true; showAlert("Candy Island Unlocked!", "#ff66b2");
+            } else { showAlert("Not enough bones!", "#ff4444"); return; }
+        }
+        updateSign(); saveGame(); updateHUD(); openTravelMenu(); 
     }
 
     window.goHome = function() { closeModal('teleport-modal'); triggerTravel('main'); }
@@ -702,6 +745,7 @@
         document.getElementById('loading-screen').style.display = 'flex'; document.getElementById('loading-screen').style.opacity = '1';
         let loadTxt = 'Teleporting Home...';
         if(dest === 'mutant') loadTxt = 'Sailing to Mutant Island...';
+        if(dest === 'candy') loadTxt = 'Traveling to Candy Island...';
         document.getElementById('loading-text').innerText = loadTxt;
         
         setTimeout(() => {
@@ -721,7 +765,7 @@
         openModal('shop-modal'); document.getElementById('total-caught-text').innerText = `${totalCaughtCount}/${fishDatabase.length}`;
         const upGrid = document.getElementById('upgrade-shop-grid'); upGrid.innerHTML = '';
         upGrid.innerHTML += getUpgradeBtnHTML(ownsBiggerRod, equipBiggerRod, 'rod', 25, 'Bigger Rod', '+25% Size, +10% Better Fish');
-        upGrid.innerHTML += getUpgradeBtnHTML(ownsMouse, equipMouse, 'mouse', 50, 'Discounts', '10% Shop Discounts for all rods');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsMouse, equipMouse, 'mouse', 50, 'Pet Mouse', 'Runs around, 10% Shop Discount');
         upGrid.innerHTML += getUpgradeBtnHTML(ownsGlow, equipGlow, 'glow', 50, 'Glowing Rods', 'Makes basic rods glow 5x cooler!');
         const shopGrid = document.getElementById('rod-shop-grid'); shopGrid.innerHTML = '';
         rods.forEach((r, i) => {
@@ -754,7 +798,7 @@
     function openShredder() { shredSelection = []; openModal('shredder-modal'); renderShredderInventory(); }
     function renderShredderInventory() {
         const grid = document.getElementById('shredder-inventory-grid'); grid.innerHTML = '';
-        let shreddableFish = inventory.filter(f => f.id !== 'Mutant'); 
+        let shreddableFish = inventory.filter(f => f.id !== 'Mutant' && f.id !== 'Candy'); 
         
         if(shreddableFish.length === 0) { grid.innerHTML = "<p style='color:#888;'>No shreddable fish in inventory.</p>"; document.getElementById('shred-btn').innerText = `SHRED SELECTED (0)`; return; }
         
@@ -767,10 +811,10 @@
     window.toggleShredSelect = function(index) { const pos = shredSelection.indexOf(index); if (pos > -1) shredSelection.splice(pos, 1); else shredSelection.push(index); renderShredderInventory(); }
     window.shredSelectedFish = function() {
         if(shredSelection.length === 0) return; closeModal('shredder-modal');
-        let shreddableFish = inventory.filter(f => f.id !== 'Mutant');
+        let shreddableFish = inventory.filter(f => f.id !== 'Mutant' && f.id !== 'Candy');
         let toShred = shreddableFish.filter((_, i) => shredSelection.includes(i));
         
-        inventory = inventory.filter(f => f.id === 'Mutant' || !toShred.includes(f));
+        inventory = inventory.filter(f => f.id === 'Mutant' || f.id === 'Candy' || !toShred.includes(f));
         pendingBones = toShred.reduce((sum, f) => sum + Math.max(1, Math.floor(f.value / 10)), 0); saveGame();
         
         isShreddingActive = true; shredTimer = 2.0; state = 'shredding'; actionBtn.innerText = 'SHREDDING...'; actionBtn.style.background = '#888';
@@ -835,7 +879,7 @@
                     else if (cPos.distanceTo(new THREE.Vector2(0, 8)) < 4) { state = 'near_shredder'; if(pendingBones > 0) { actionBtn.innerText = 'GRAB BONES'; actionBtn.style.background = 'linear-gradient(135deg, #ba68c8, #7b1fa2)'; } else { actionBtn.innerText = 'SHREDDER'; actionBtn.style.background = 'linear-gradient(135deg, #555, #888)'; } msg.innerText = 'Shredder'; msg.style.display = 'block'; }
                     else if (cPos.distanceTo(new THREE.Vector2(6, 8)) < 3) { state = 'near_travel'; actionBtn.innerText = 'FERRY'; actionBtn.style.background = '#ba68c8'; msg.innerText = 'Island Ferry'; msg.style.display = 'block'; }
                     else { if(state.startsWith('near_')) state = 'idle'; actionBtn.innerText = 'CAST'; actionBtn.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)'; msg.style.display = 'none'; }
-                } else if (currentLocation === 'mutant') {
+                } else if (currentLocation === 'mutant' || currentLocation === 'candy') {
                     if (cPos.distanceTo(new THREE.Vector2(0, -5)) < 4) { state = 'near_teleport'; actionBtn.innerText = 'TELEPORT'; actionBtn.style.background = '#00c6ff'; msg.innerText = 'Return Home'; msg.style.display = 'block'; }
                     else { if(state.startsWith('near_')) state = 'idle'; actionBtn.innerText = 'CAST'; actionBtn.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)'; msg.style.display = 'none'; }
                 }
