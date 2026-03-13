@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ultimate Fishing</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #5ca8ff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; touch-action: none; }
+        #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        
+        #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #0a0f19; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; transition: opacity 0.8s ease; }
+        #loading-screen h1 { margin: 0; font-size: 36px; text-transform: uppercase; letter-spacing: 4px; background: linear-gradient(90deg, #00c6ff, #0072ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        #loading-text { margin: 5px 0 30px 0; color: #888; font-size: 16px; letter-spacing: 2px; }
+        
+        .water-wave { animation: wave 2s infinite ease-in-out; }
+        .fishing-line-anim { animation: pull 2s infinite ease-in-out; }
+        @keyframes wave { 0% { transform: translateY(0); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
+        @keyframes pull { 0% { y2: 150; } 50% { y2: 130; } 100% { y2: 150; } }
+
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; opacity: 0; transition: opacity 1s; }
+        #hud { position: absolute; top: 20px; left: 20px; background: rgba(15, 25, 35, 0.6); backdrop-filter: blur(12px); color: white; padding: 15px 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; }
+        #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background: rgba(255,255,255,0.9); border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.8); }
+        #interaction-msg { position: absolute; top: 25%; left: 50%; transform: translateX(-50%); background: linear-gradient(90deg, #FFD700, #FFA500); color: #000; padding: 10px 30px; border-radius: 25px; font-weight: 900; font-size: 18px; display: none; box-shadow: 0 4px 15px rgba(255,215,0,0.6); text-transform: uppercase; letter-spacing: 2px; }
+        
+        #joystick-zone { position: absolute; bottom: 30px; left: 30px; width: 140px; height: 140px; background: rgba(255,255,255,0.05); border-radius: 50%; border: 2px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px); pointer-events: auto; }
+        #joystick-knob { position: absolute; top: 45px; left: 45px; width: 50px; height: 50px; background: rgba(255,255,255,0.9); border-radius: 50%; pointer-events: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        
+        #action-btn { position: absolute; bottom: 40px; right: 40px; width: 110px; height: 110px; background: linear-gradient(135deg, #00c6ff, #0072ff); color: white; border-radius: 50%; border: 4px solid rgba(255,255,255,0.8); font-weight: bold; font-size: 18px; box-shadow: 0 8px 25px rgba(0,114,255,0.6); pointer-events: auto; cursor: pointer; transition: transform 0.1s; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; text-align: center;}
+        #action-btn:active { transform: scale(0.9); }
+
+        #minigame-container { position: absolute; top: 50%; right: 8%; transform: translateY(-50%); width: 40px; height: 350px; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); border: 2px solid #444; border-radius: 20px; display: none; pointer-events: none; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        #catch-bar { position: absolute; bottom: 0; left: 4px; width: 32px; height: 80px; background: rgba(0, 255, 0, 0.5); border: 2px solid lime; border-radius: 10px; transition: bottom 0.1s linear; }
+        #fish-line { position: absolute; bottom: 0; left: 0; width: 100%; height: 8px; background: #ff3333; box-shadow: 0 0 10px red; transition: bottom 0.1s linear; border-radius: 4px; }
+        #progress-container { position: absolute; top: 50%; right: calc(8% + 60px); transform: translateY(-50%); width: 15px; height: 350px; background: rgba(0,0,0,0.7); border: 1px solid #444; border-radius: 10px; display: none; overflow: hidden; }
+        #progress-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: linear-gradient(to top, #ff9900, #00ff00); border-radius: 8px; transition: height 0.1s; }
+
+        .modal { position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; background: rgba(10, 15, 25, 0.95); backdrop-filter: blur(20px); color: white; border-radius: 20px; border: 1px solid rgba(0,198,255,0.3); display: none; pointer-events: auto; overflow-y: auto; padding: 25px; box-sizing: border-box; z-index: 10; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 20px; }
+        .close-btn { background: rgba(255,68,68,0.2); color: #ff4444; border: 1px solid #ff4444; padding: 8px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .close-btn:hover { background: #ff4444; color: white; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; }
+        .card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); transition: transform 0.2s, background 0.2s; cursor: pointer; }
+        .card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+        .card button { margin-top: 15px; padding: 10px 15px; width: 100%; background: linear-gradient(135deg, #00c6ff, #0072ff); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .card button.equip-btn { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .card button.unequip-btn { background: linear-gradient(135deg, #ff4444, #cc0000); }
+        .card button.upgrade-btn { background: linear-gradient(135deg, #ba68c8, #7b1fa2); }
+        .card button:disabled { background: #555; color: #aaa; cursor: default; }
+        
+        /* Updated #viewer-overlay background to have a clear center so the 3D model isn't cloudy */
+        #viewer-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(0,0,0,0) 30%, rgba(10,15,25,0.95) 100%); display: none; z-index: 30; pointer-events: auto; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 50px; box-sizing: border-box; }
+        #viewer-info { position: absolute; top: 40px; text-align: center; background: rgba(0,0,0,0.5); padding: 15px 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        #viewer-title { color: white; font-size: 40px; margin: 0 0 5px 0; text-transform: uppercase; letter-spacing: 2px; }
+        #viewer-rarity { font-size: 22px; margin: 0 0 10px 0; }
+        
+        #catch-popup { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 20; }
+        #caught-header { position: absolute; top: 12%; left: 50%; transform: translateX(-50%); text-align: center; background: rgba(15,25,35,0.85); backdrop-filter: blur(10px); padding: 15px 40px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 10px 30px rgba(0,0,0,0.6); pointer-events: auto; width: max-content; }
+        #caught-button-container { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); pointer-events: auto; }
+
+        .rarity-Common { color: #B0BEC5; } .rarity-Uncommon { color: #81C784; } .rarity-Rare { color: #64B5F6; } 
+        .rarity-ExtraRare { color: #BA68C8; text-shadow: 0 0 8px rgba(186,104,200,0.5); } .rarity-Epic { color: #F06292; text-shadow: 0 0 12px rgba(240,98,146,0.6); } 
+        .rarity-Legendary { color: #FFD54F; text-shadow: 0 0 15px rgba(255,213,79,0.8); } .rarity-Exotic { color: #00ffff; text-shadow: 0 0 20px rgba(0,255,255,1); font-weight: 900; letter-spacing: 1px; }
+        .rarity-Mutant { color: #39ff14; text-shadow: 0 0 15px rgba(57,255,20,0.8); font-weight: 900; letter-spacing: 2px; }
+
+        #alert-box { position: absolute; top: 15%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); color: white; padding: 15px 30px; border-radius: 12px; font-size: 18px; font-weight: bold; text-align: center; display: none; pointer-events: none; z-index: 5; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <svg viewBox="0 0 200 200" width="180" height="180" style="margin-bottom: 20px;">
+            <path d="M 0 160 Q 50 140 100 160 T 200 160 L 200 200 L 0 200 Z" fill="#00c6ff" class="water-wave" opacity="0.8"/>
+            <path d="M 0 170 Q 50 150 100 170 T 200 170 L 200 200 L 0 200 Z" fill="#0072ff" class="water-wave" opacity="0.6" style="animation-delay: -1s;"/>
+            <line x1="20" y1="180" x2="80" y2="50" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+            <line x1="80" y1="50" x2="150" y2="150" stroke="#aaa" stroke-width="2" class="fishing-line-anim"/>
+        </svg>
+        <h1>Ultimate Fishing</h1>
+        <p id="loading-text">Made By Vewerty Ploik</p>
+        <div style="width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden;">
+            <div style="width: 100%; height: 100%; background: #00c6ff; animation: loadbar 3s ease-out forwards;"></div>
+        </div>
+    </div>
+    <style>@keyframes loadbar { 0% { width: 0%; } 100% { width: 100%; } }</style>
+
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+        <div id="ui-layer">
+            <div id="hud">
+                💰 $<span id="money">0</span><br>
+                🦴 <span id="bones-count">0</span><br>
+                🎣 <span id="current-rod">Classic</span>
+            </div>
+            <div id="crosshair"></div>
+            <div id="interaction-msg">Station</div>
+            <div id="alert-box"></div>
+
+            <div id="minigame-container"><div id="catch-bar"></div><div id="fish-line"></div></div>
+            <div id="progress-container"><div id="progress-fill"></div></div>
+
+            <div id="catch-popup">
+                <div id="caught-header">
+                    <h2 id="caught-fish-name" style="margin:0 0 5px 0; color: white; font-size: 32px; letter-spacing: 1px;">Name</h2>
+                    <h3 id="caught-fish-rarity" style="margin:0; font-size: 20px; text-transform: uppercase;">Rarity</h3>
+                </div>
+                <div id="caught-button-container">
+                    <button onclick="closeCatchPopup()" style="padding: 15px 50px; font-size:20px; font-weight:bold; background: white; color: black; border:none; border-radius:30px; cursor:pointer; box-shadow: 0 4px 20px rgba(0,0,0,0.6);">COLLECT</button>
+                </div>
+            </div>
+
+            <div id="joystick-zone"><div id="joystick-knob"></div></div>
+            <button id="action-btn">CAST</button>
+            
+            <div id="shop-modal" class="modal">
+                <div class="modal-header"><h2>Tackle Shop & Upgrades</h2><button class="close-btn" onclick="closeModal('shop-modal')">Close</button></div>
+                
+                <h3 style="color:#ba68c8; margin-bottom: 10px;">🦴 Bone Upgrades</h3>
+                <div class="grid" id="upgrade-shop-grid"></div>
+                <hr style="border-color: rgba(255,255,255,0.05); margin: 30px 0;">
+                
+                <h3 style="color:#00c6ff; margin-bottom: 10px;">Fishing Rods</h3>
+                <div class="grid" id="rod-shop-grid"></div>
+                <hr style="border-color: rgba(255,255,255,0.05); margin: 30px 0;">
+                
+                <h3 style="color:#00c6ff; margin-bottom: 5px;">Fish Index (<span id="total-caught-text">0</span>)</h3>
+                <p style="color:#888; font-size:14px; margin-bottom: 15px;">Tap a caught fish to view its 3D model in the studio!</p>
+                <div class="grid" id="fish-index-grid"></div>
+            </div>
+
+            <div id="sell-modal" class="modal">
+                <div class="modal-header"><h2>Fish Market</h2><button class="close-btn" onclick="closeModal('sell-modal')">Close</button></div>
+                <button onclick="sellAllFish()" style="width: 100%; padding: 20px; background: linear-gradient(135deg, #11998e, #38ef7d); color: white; font-size: 22px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 25px; box-shadow: 0 8px 20px rgba(56,239,125,0.4);">SELL ALL INVENTORY</button>
+                <div class="grid" id="inventory-grid"></div>
+            </div>
+
+            <div id="shredder-modal" class="modal">
+                <div class="modal-header"><h2>Fish Shredder 3000</h2><button class="close-btn" onclick="closeModal('shredder-modal')">Close</button></div>
+                <p style="text-align:center; color:#ccc; font-size:18px;">Tap fish to select them, then turn them into Bones! <br><span style="color:#39ff14; font-size:14px;">(Mutant rarity fish are protected from shredding)</span></p>
+                <button id="shred-btn" onclick="shredSelectedFish()" style="width: 100%; padding: 20px; background: linear-gradient(135deg, #ff4444, #cc0000); color: white; font-size: 22px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 25px; box-shadow: 0 8px 20px rgba(204,0,0,0.4);">SHRED SELECTED (0)</button>
+                <div class="grid" id="shredder-inventory-grid"></div>
+            </div>
+
+            <div id="travel-modal" class="modal">
+                <div class="modal-header"><h2>Mutant Island Ferry</h2><button class="close-btn" onclick="closeModal('travel-modal')">Close</button></div>
+                <p id="travel-desc" style="text-align:center; font-size:18px; margin-bottom:30px;">Travel to the mysterious Mutant Island.<br>Cost: 10,000 Bones (One-Time).</p>
+                <button id="travel-btn" onclick="buyOrTravelMutant()" style="width: 100%; padding: 20px; background: linear-gradient(135deg, #ba68c8, #7b1fa2); color: white; font-size: 22px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 8px 20px rgba(186,104,200,0.4);">BUY TICKET</button>
+            </div>
+
+            <div id="teleport-modal" class="modal">
+                <div class="modal-header"><h2>Teleport Pad</h2><button class="close-btn" onclick="closeModal('teleport-modal')">Close</button></div>
+                <p style="text-align:center; font-size:18px; margin-bottom:30px;">Return to the Main Island?</p>
+                <button onclick="goHome()" style="width: 100%; padding: 20px; background: linear-gradient(135deg, #00c6ff, #0072ff); color: white; font-size: 22px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 8px 20px rgba(0,198,255,0.4);">TELEPORT HOME</button>
+            </div>
+
+            <div id="viewer-overlay">
+                <div id="viewer-info">
+                    <h2 id="viewer-title">Fish Name</h2>
+                    <h3 id="viewer-rarity">Rarity</h3>
+                    <p style="color:#aaa;">(Drag screen to rotate)</p>
+                </div>
+                <button onclick="closeViewer()" style="padding: 12px 40px; font-size:18px; font-weight:bold; background: rgba(255,68,68,0.2); border: 1px solid #ff4444; color:#ff4444; border-radius:12px; cursor:pointer; margin-bottom: 20px;">Return to Shop</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- DATABASE & STATE ---
+    const rawFishData = [
+        ['Anchovy','Common',10,'#silver','#aaa',0,[0.3, 0.4, 1.2],0.5], ['Herring','Common',12,'#a8b8c8','#555',1,[0.4, 0.5, 1.1],0.6],
+        ['Sardine','Common',12,'#8899aa','#fff',3,[0.3, 0.4, 1.0],0.5], ['Minnow','Common',10,'#b8a898','#333',1,[0.3, 0.4, 1.0],0.4],
+        ['Carp','Common',15,'#b8860b','#daa520',2,[0.6, 0.7, 1.2],0.9], ['Bluegill','Common',14,'#4682b4','#ff8c00',3,[0.4, 0.8, 1.0],0.6],
+        ['Sunfish','Common',14,'#ffd700','#ff4500',2,[0.3, 0.9, 1.0],0.7], ['Crappie','Common',15,'#eee','#333',2,[0.4, 0.8, 1.1],0.7],
+        ['Perch','Common',16,'#3cb371','#ff1493',1,[0.5, 0.6, 1.1],0.7], ['Smelt','Common',12,'#e0ffff','#aaa',0,[0.2, 0.3, 1.2],0.4],
+        ['Chub','Common',13,'#a9a9a9','#555',0,[0.5, 0.5, 1.1],0.6], ['Shiner','Common',11,'#fffafa','#gold',3,[0.3, 0.4, 1.0],0.4],
+        ['Dace','Common',11,'#d3d3d3','#000',1,[0.3, 0.4, 1.1],0.5], ['Roach','Common',14,'#c0c0c0','#ff0000',3,[0.4, 0.5, 1.1],0.6],
+        ['Cod','Uncommon',35,'#deb887','#8b4513',2,[0.6, 0.7, 1.2],1.0], ['Sea Bass','Uncommon',40,'#2e8b57','#fff',3,[0.5, 0.6, 1.2],1.1],
+        ['Flounder','Uncommon',35,'#8b4513','#000',2,[0.9, 0.2, 1.1],0.9], ['Catfish','Uncommon',38,'#556b2f','#000',0,[0.7, 0.5, 1.3],1.2],
+        ['Tilapia','Uncommon',32,'#f4a460','#a0522d',1,[0.4, 0.7, 1.0],0.8], ['Halibut','Uncommon',45,'#696969','#fff',2,[1.0, 0.2, 1.3],1.2],
+        ['Mackerel','Uncommon',35,'#4169e1','#000',1,[0.4, 0.5, 1.3],0.9], ['Snapper','Uncommon',42,'#ff6347','#fff',3,[0.5, 0.7, 1.1],1.0],
+        ['Grouper','Uncommon',48,'#8b0000','#000',2,[0.8, 0.8, 1.2],1.3], ['Mullet','Uncommon',30,'#b0c4de','#fff',0,[0.5, 0.5, 1.1],0.8],
+        ['Pollock','Uncommon',34,'#5f9ea0','#fff',3,[0.5, 0.6, 1.2],0.9], ['Haddock','Uncommon',36,'#dcdcdc','#000',2,[0.5, 0.6, 1.2],1.0],
+        ['Whiting','Uncommon',30,'#f8f8ff','#ccc',0,[0.4, 0.4, 1.2],0.7], ['Lingcod','Uncommon',45,'#556b2f','#8b4513',2,[0.6, 0.5, 1.4],1.2],
+        ['Salmon','Rare',90,'#fa8072','#fff',3,[0.5, 0.6, 1.3],1.1], ['Trout','Rare',85,'#6b8e23','#ffc0cb',2,[0.5, 0.6, 1.2],1.0],
+        ['Pike','Rare',100,'#228b22','#adff2f',1,[0.4, 0.4, 1.6],1.3], ['Walleye','Rare',95,'#daa520','#000',2,[0.5, 0.5, 1.3],1.1],
+        ['Mahi Mahi','Rare',120,'#00ff00','#00bfff',3,[0.4, 0.8, 1.2],1.2], ['Redfish','Rare',110,'#cd5c5c','#000',2,[0.5, 0.6, 1.2],1.1],
+        ['Bonefish','Rare',130,'#c0c0c0','#fff',1,[0.4, 0.5, 1.4],1.2], ['Tarpon','Rare',150,'#silver','#ccc',0,[0.5, 0.6, 1.5],1.4],
+        ['Snook','Rare',115,'#ffd700','#000',1,[0.5, 0.6, 1.3],1.1], ['Permit','Rare',105,'#d3d3d3','#a9a9a9',3,[0.4, 0.9, 1.1],1.0],
+        ['Cobia','Rare',140,'#8b4513','#fff',1,[0.6, 0.5, 1.4],1.3], ['Wahoo','Rare',145,'#00008b','#00bfff',1,[0.3, 0.4, 1.7],1.3],
+        ['Tuna','ExtraRare',250,'#4682b4','#fff',3,[0.7, 0.8, 1.3],1.6], ['Marlin','ExtraRare',350,'#1e90ff','#fff',1,[0.5, 0.6, 1.8],2.0],
+        ['Sailfish','ExtraRare',320,'#0000cd','#8a2be2',1,[0.4, 0.5, 1.7],1.8], ['Swordfish','ExtraRare',380,'#708090','#fff',0,[0.5, 0.6, 1.8],2.0],
+        ['Pacific Halibut','ExtraRare',280,'#555','#fff',2,[1.2, 0.2, 1.4],1.8], ['Sturgeon','ExtraRare',400,'#2f4f4f','#fff',2,[0.6, 0.5, 1.6],2.1],
+        ['Arapaima','ExtraRare',360,'#8b0000','#ff4500',2,[0.6, 0.6, 1.7],2.2], ['Barracuda','ExtraRare',220,'#c0c0c0','#000',1,[0.3, 0.4, 1.7],1.5],
+        ['Roosterfish','ExtraRare',240,'#dcdcdc','#000',1,[0.4, 0.7, 1.2],1.4], ['Trevally','ExtraRare',260,'#a9a9a9','#fff',3,[0.6, 0.8, 1.2],1.5],
+        ['Kingfish','ExtraRare',230,'#silver','#000',1,[0.4, 0.5, 1.5],1.4], ['Amberjack','ExtraRare',270,'#daa520','#fff',3,[0.6, 0.7, 1.3],1.5],
+        ['Oarfish','Epic',600,'#c0c0c0','#ff0000',2,[0.2, 0.3, 2.5],2.5], ['Coelacanth','Epic',800,'#191970','#fff',2,[0.7, 0.8, 1.2],1.8],
+        ['Golden Mahi','Epic',700,'#ffd700','#ff8c00',3,[0.4, 0.8, 1.2],1.5], ['Giant Trevally','Epic',550,'#696969','#000',0,[0.7, 0.9, 1.2],1.9],
+        ['Goliath Grouper','Epic',900,'#8b4513','#5c4033',2,[1.0, 1.0, 1.3],2.5], ['Blue Marlin','Epic',850,'#0000ff','#fff',1,[0.5, 0.6, 1.8],2.3],
+        ['Black Marlin','Epic',850,'#000','#fff',1,[0.5, 0.6, 1.8],2.3], ['Tiger Shark','Epic',950,'#708090','#000',1,[0.6, 0.6, 1.6],2.2],
+        ['Hammerhead Shark','Epic',1000,'#a9a9a9','#fff',0,[0.8, 0.5, 1.6],2.2], ['Thresher Shark','Epic',950,'#778899','#fff',0,[0.5, 0.5, 1.8],2.2],
+        ['Great White','Legendary',2000,'#dcdcdc','#fff',3,[0.7, 0.7, 1.6],3.0], ['Whale Shark','Legendary',2500,'#000080','#fff',2,[0.9, 0.8, 1.7],3.5],
+        ['Megamouth','Legendary',1800,'#2f4f4f','#000',0,[0.8, 0.8, 1.5],2.8], ['Goblin Shark','Legendary',1900,'#ffb6c1','#fff',0,[0.5, 0.5, 1.6],2.5],
+        ['Giant Squid','Legendary',2200,'#ff4500','#8b0000',3,[0.4, 0.4, 2.0],3.0], ['Colossal Squid','Legendary',2800,'#8b0000','#000',2,[0.5, 0.5, 2.2],3.2],
+        ['Baby Kraken','Legendary',3000,'#800080','#4b0082',3,[0.8, 0.8, 1.5],2.8], ['Mini Leviathan','Legendary',2900,'#006400','#adff2f',1,[0.6, 0.6, 2.0],3.2],
+        ['Golden Koi','Exotic',5000,'#ffd700','#fff',2,[0.6, 0.7, 1.2],1.8], ['Diamond Sturgeon','Exotic',6000,'#e0ffff','#fff',3,[0.6, 0.5, 1.6],2.5],
+        ['Galactic Angler','Exotic',7500,'#000','#ff00ff',2,[0.7, 0.8, 1.2],2.0], ['Void Ray','Exotic',8000,'#111','#4b0082',3,[1.5, 0.1, 1.5],2.5],
+        ['Nebula Dragonfish','Exotic',10000,'#ff1493','#00ffff',1,[0.4, 0.5, 2.2],3.0],
+        ['Mutant Fish','Mutant',15000,'#90ee90','#006400',2,[0.8, 0.7, 1.4],2.5],
+        ['Toxic Fish','Mutant',20000,'#ffff00','#00ff00',2,[0.7, 0.6, 1.3],2.2],
+        ['Mutant HornFish','Mutant',25000,'#90ee90','#006400',2,[0.8, 0.8, 1.5],2.8],
+        ['Nebula Mutant Fish','Mutant',50000,'#90ee90','#800080',4,[0.9, 0.8, 1.6],3.0],
+        ['Nebula Mutant HornFish','Mutant',100000,'#90ee90','#800080',4,[0.9, 0.9, 1.7],3.5]
+    ];
+
+    const fishDatabase = rawFishData.map(f => ({ id: f[1], name: f[0], baseVal: f[2], c1: f[3], c2: f[4], pat: f[5], prop: f[6], scale: f[7] }));
+    let fishIndex = {}; fishDatabase.forEach(f => fishIndex[f.name] = 0);
+    
+    // Save Data variables
+    let inventory = [], money = 0, bones = 0, totalCaughtCount = 0;
+    
+    // Ownership & Equip states
+    let ownsBiggerRod = false, ownsMouse = false, ownsGlow = false, ownsMutantIsland = false;
+    let equipBiggerRod = false, equipMouse = false, equipGlow = false;
+    let currentLocation = 'main'; // 'main' or 'mutant'
+    
+    // Top 3 Catches
+    let topCatches = []; 
+
+    const rarities = [
+        { id: 'Common', name: 'Common' }, { id: 'Uncommon', name: 'Uncommon' }, 
+        { id: 'Rare', name: 'Rare' }, { id: 'ExtraRare', name: 'Extra Rare' }, 
+        { id: 'Epic', name: 'Epic' }, { id: 'Legendary', name: 'Legendary' }, 
+        { id: 'Exotic', name: 'Exotic' }, { id: 'Mutant', name: 'Mutant' }
+    ];
+
+    const rods = [
+        { id: 'classic', name: 'Classic', cost: 0, minTier: 0, maxTier: 2, mainColor: 0x8B4513, accent: 0x222222, owned: true },
+        { id: 'magma', name: 'Magma', cost: 450, minTier: 2, maxTier: 4, mainColor: 0x550000, accent: 0xFF4500, owned: false },
+        { id: 'forest', name: 'Forest', cost: 3000, minTier: 3, maxTier: 5, mainColor: 0x2E4D2E, accent: 0x8FBC8F, owned: false },
+        { id: 'iron', name: 'Iron', cost: 25000, minTier: 4, maxTier: 6, mainColor: 0x708090, accent: 0x00E5FF, owned: false }
+    ];
+    let currentRodIndex = 0;
+
+    // --- SAVE / LOAD SYSTEM ---
+    function saveGame() {
+        const data = { 
+            money, bones, inventory, fishIndex, totalCaughtCount, 
+            rodsOwned: rods.map(r=>r.owned), currentRodIndex, 
+            ownsBiggerRod, ownsMouse, ownsGlow, ownsMutantIsland, currentLocation,
+            equipBiggerRod, equipMouse, equipGlow,
+            topCatches
+        };
+        localStorage.setItem('ultimateFishingSave', JSON.stringify(data));
+        updateHUD();
+    }
+
+    function loadGame() {
+        const saved = localStorage.getItem('ultimateFishingSave');
+        if(saved) {
+            try {
+                const data = JSON.parse(saved);
+                money = data.money || 0; bones = data.bones || 0;
+                inventory = data.inventory || []; 
+                if(data.fishIndex) Object.keys(data.fishIndex).forEach(k => { if(fishIndex[k] !== undefined) fishIndex[k] = data.fishIndex[k]; });
+                totalCaughtCount = data.totalCaughtCount || 0;
+                if(data.rodsOwned) data.rodsOwned.forEach((o, i) => rods[i].owned = o);
+                currentRodIndex = data.currentRodIndex || 0;
+                
+                ownsBiggerRod = data.ownsBiggerRod || false; ownsMouse = data.ownsMouse || false; ownsGlow = data.ownsGlow || false; ownsMutantIsland = data.ownsMutantIsland || false;
+                equipBiggerRod = data.equipBiggerRod || false; equipMouse = data.equipMouse || false; equipGlow = data.equipGlow || false;
+                
+                currentLocation = data.currentLocation || 'main';
+                topCatches = data.topCatches || [];
+            } catch(e) { console.error("Corrupted save data."); }
+        }
+    }
+    loadGame();
+
+    // --- THREE.JS CORE SETUP ---
+    const canvas = document.getElementById('game-canvas');
+    const scene = new THREE.Scene(); 
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000); camera.position.set(0, 2, 0);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); renderer.setSize(window.innerWidth, window.innerHeight); renderer.shadowMap.enabled = true;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const sunLight = new THREE.DirectionalLight(0xfffaea, 1.5); sunLight.position.set(30, 60, -30); sunLight.castShadow = true; 
+    scene.add(sunLight);
+
+    const studioScene = new THREE.Scene(); studioScene.background = new THREE.Color(0x2a3a50); 
+    studioScene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    studioScene.add(new THREE.DirectionalLight(0xfffaea, 1.5).position.set(30, 60, -30)); 
+    studioScene.add(new THREE.DirectionalLight(0xffffff, 0.5).position.set(-5, -5, 5));
+    const studioCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    studioCamera.position.set(0, 0, 8); studioCamera.lookAt(0, 0, 0);
+    let viewingFishMesh = null; let isViewingMode = false;
+
+    // --- TEXTURES & WORLD BUILDS ---
+    function generateWoodTexture(c1, c2) {
+        const c = document.createElement('canvas'); c.width = 256; c.height = 256; const ctx = c.getContext('2d');
+        ctx.fillStyle = c1; ctx.fillRect(0,0,256,256); ctx.fillStyle = c2;
+        for(let i=0; i<150; i++) { ctx.globalAlpha = Math.random()*0.4; ctx.fillRect(Math.random()*256, 0, Math.random()*8+1, 256); }
+        const tex = new THREE.CanvasTexture(c); tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping; return tex;
+    }
+    const dockWoodMat = new THREE.MeshStandardMaterial({ map: generateWoodTexture('#5a3c2a', '#3a2214'), roughness: 0.9 });
+    const shopWoodMat = new THREE.MeshStandardMaterial({ map: generateWoodTexture('#8b2222', '#551111'), roughness: 0.8 });
+    const sellWoodMat = new THREE.MeshStandardMaterial({ map: generateWoodTexture('#228b22', '#115511'), roughness: 0.8 });
+    const lightWoodMat = new THREE.MeshStandardMaterial({ map: generateWoodTexture('#d2b48c', '#a0522d'), roughness: 0.8 }); 
+    
+    // Shared Environment Meshes
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: 0x0077dd, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.85 }));
+    water.rotation.x = -Math.PI / 2; water.position.y = -0.5; scene.add(water);
+    const sand = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({ color: 0xdeb887, roughness: 1 }));
+    sand.rotation.x = -Math.PI / 2; sand.position.y = -3; scene.add(sand);
+    
+    // Main Island Group
+    const mainIslandGroup = new THREE.Group();
+    scene.add(mainIslandGroup);
+    
+    const dock = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), dockWoodMat); dock.receiveShadow = true; dock.castShadow = true; mainIslandGroup.add(dock);
+
+    const shopGroup = new THREE.Group(); shopGroup.position.set(-8, 1.5, -6);
+    shopGroup.add(new THREE.Mesh(new THREE.BoxGeometry(4, 3, 4), shopWoodMat));
+    const shopRoof = new THREE.Mesh(new THREE.ConeGeometry(3.5, 2, 4), new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 1.0 }));
+    shopRoof.position.y = 2.5; shopRoof.rotation.y = Math.PI/4; shopGroup.add(shopRoof); mainIslandGroup.add(shopGroup);
+
+    const sellGroup = new THREE.Group(); sellGroup.position.set(8, 0.5, -6);
+    sellGroup.add(new THREE.Mesh(new THREE.BoxGeometry(4, 1, 3), dockWoodMat));
+    const awning = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.2, 3.5), sellWoodMat); awning.position.set(0, 2.5, 0); awning.rotation.x = 0.2; sellGroup.add(awning);
+    for(let x of [-1.8, 1.8]) for(let z of [-1.2, 1.2]) { let p = new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,2.5), dockWoodMat); p.position.set(x, 1.25, z); sellGroup.add(p); }
+    mainIslandGroup.add(sellGroup);
+
+    // --- SHREDDER MACHINE ---
+    const shredderGroup = new THREE.Group(); 
+    shredderGroup.position.set(0, 0.5, 8); shredderGroup.rotation.y = Math.PI; 
+    const machineBody = new THREE.Mesh(new THREE.BoxGeometry(3, 2.5, 2), new THREE.MeshStandardMaterial({color: 0x777777, metalness:0.6, roughness:0.4}));
+    machineBody.position.y = 1.25; shredderGroup.add(machineBody);
+    const shredderSlot = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 0.2), new THREE.MeshStandardMaterial({color: 0x111111}));
+    shredderSlot.position.set(0, 1.8, 1.01); shredderGroup.add(shredderSlot);
+    const redButtonBase = new THREE.Group();
+    const shredderBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.15, 16), new THREE.MeshStandardMaterial({color: 0xff0000, roughness:0.2}));
+    shredderBtn.rotation.x = Math.PI/2; shredderBtn.position.z = 1.05;
+    redButtonBase.position.set(0, 1.0, 0); redButtonBase.add(shredderBtn); shredderGroup.add(redButtonBase);
+    const visualBones = new THREE.Group();
+    const boneShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.7), new THREE.MeshStandardMaterial({color: 0xffffee, roughness: 0.8}));
+    boneShaft.rotation.z = Math.PI/2; visualBones.add(boneShaft);
+    for(let pos of [[0.35, 0.05, 0], [0.35, -0.05, 0], [-0.35, 0.05, 0], [-0.35, -0.05, 0]]) { const bEnd = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshStandardMaterial({color: 0xffffee})); bEnd.position.set(pos[0], pos[1], pos[2]); visualBones.add(bEnd); }
+    visualBones.position.set(0, 1.8, 1.15); visualBones.visible = false; shredderGroup.add(visualBones);
+    mainIslandGroup.add(shredderGroup);
+    let isShreddingActive = false, shredTimer = 0, pendingBones = 0;
+
+    // --- TROPHY WALL ---
+    const trophyWallGroup = new THREE.Group();
+    trophyWallGroup.position.set(-5, 0.5, 8); trophyWallGroup.rotation.y = Math.PI; 
+    const wallMesh = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 0.5), lightWoodMat);
+    wallMesh.position.y = 2; trophyWallGroup.add(wallMesh);
+    mainIslandGroup.add(trophyWallGroup);
+    let trophyFishMeshes = [];
+
+    // --- TRAVEL SIGN ---
+    const travelSignGroup = new THREE.Group();
+    travelSignGroup.position.set(6, 0.5, 8); // Moved farther left
+    travelSignGroup.rotation.y = Math.PI;
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2), dockWoodMat); post.position.y = 1; travelSignGroup.add(post);
+    const board = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.0, 0.1), dockWoodMat); board.position.set(0, 1.6, 0.06); travelSignGroup.add(board);
+    mainIslandGroup.add(travelSignGroup);
+
+    function generateTextSprite(textLines, fontSize, yOffset) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256; canvas.height = 128; 
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0,0,256,128); ctx.textAlign = 'center'; ctx.fillStyle = 'white';
+        textLines.forEach((line, i) => {
+            if(i === 0 && textLines.length === 1) { ctx.font = `bold ${fontSize}px Arial`; ctx.shadowColor = "black"; ctx.shadowBlur = 4; ctx.lineWidth = 4; ctx.strokeStyle = "black"; ctx.strokeText(line, 128, 64); ctx.fillText(line, 128, 64); } 
+            else { ctx.font = i === 0 ? `bold ${fontSize}px Arial` : `bold ${fontSize - 6}px Arial`; ctx.fillStyle = i === 0 ? (line.includes("MUTANT") ? '#39ff14' : 'white') : '#ccc'; ctx.shadowColor = "black"; ctx.shadowBlur = 3; ctx.lineWidth = 3; ctx.strokeStyle = "black"; ctx.strokeText(line, 128, 40 + (i * 35)); ctx.fillText(line, 128, 40 + (i * 35)); }
+        });
+        const tex = new THREE.CanvasTexture(canvas); const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.75), mat); mesh.position.y = yOffset; mesh.position.z = 0.26; return mesh;
+    }
+    
+    const signTextSprite = generateTextSprite(["MUTANT ISLAND", "10,000 Bones"], 26, 1.6);
+    signTextSprite.position.z = 0.12; travelSignGroup.add(signTextSprite);
+
+    // --- MUTANT ISLAND GROUP ---
+    const mutantIslandGroup = new THREE.Group();
+    scene.add(mutantIslandGroup);
+    
+    // Mutant Dock (Darker brown floor)
+    const mutantDockMat = new THREE.MeshStandardMaterial({ map: generateWoodTexture('#4b3621', '#2e1c0d'), roughness: 0.9 });
+    const mutantDock = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), mutantDockMat);
+    mutantDock.receiveShadow = true; mutantDock.castShadow = true;
+    mutantIslandGroup.add(mutantDock);
+
+    // Teleporter Pad
+    const teleporterGroup = new THREE.Group();
+    teleporterGroup.position.set(0, 0.5, -5); // Positioned slightly up to sit on the dock
+    const pad = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 32), new THREE.MeshStandardMaterial({color: 0x000000, metalness: 0.9})); pad.position.y = 0.1; teleporterGroup.add(pad);
+    const glowRing = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x00c6ff, emissive: 0x00c6ff, emissiveIntensity: 2.0})); glowRing.rotation.x = Math.PI/2; glowRing.position.y = 0.2; teleporterGroup.add(glowRing);
+    mutantIslandGroup.add(teleporterGroup);
+
+    // Apply Location visuals
+    function applyLocationVisuals() {
+        if(currentLocation === 'main') {
+            mainIslandGroup.visible = true; mutantIslandGroup.visible = false;
+            water.material.color.setHex(0x0077dd); sand.material.color.setHex(0xdeb887);
+            scene.background = new THREE.Color(0x7ec0ee); scene.fog = new THREE.FogExp2(0x7ec0ee, 0.015);
+        } else {
+            mainIslandGroup.visible = false; mutantIslandGroup.visible = true;
+            water.material.color.setHex(0x90ee90); sand.material.color.setHex(0x002200);
+            scene.background = new THREE.Color(0x204020); scene.fog = new THREE.FogExp2(0x204020, 0.03);
+        }
+    }
+    applyLocationVisuals();
+
+    function buildTrophyWall() {
+        for(let m of trophyFishMeshes) trophyWallGroup.remove(m); trophyFishMeshes = [];
+        const toRemove = []; trophyWallGroup.children.forEach(c => { if(c.geometry.type === 'PlaneGeometry') toRemove.push(c); }); toRemove.forEach(c => trophyWallGroup.remove(c));
+        const slotX = [-1.8, 0, 1.8]; 
+        topCatches.forEach((catchData, i) => {
+            const fMesh = create3DFish(catchData);
+            const maxProp = Math.max(catchData.prop[0], catchData.prop[1], catchData.prop[2]) * catchData.scale;
+            fMesh.scale.setScalar(0.7 / maxProp); fMesh.position.set(slotX[i], 2, 0.4); 
+            trophyWallGroup.add(fMesh); trophyFishMeshes.push(fMesh);
+            const rankSprite = generateTextSprite([`${i+1}`], 50, 2.8); rankSprite.position.x = slotX[i]; trophyWallGroup.add(rankSprite);
+            const infoSprite = generateTextSprite([catchData.name, catchData.date], 24, 1.1); infoSprite.position.x = slotX[i]; trophyWallGroup.add(infoSprite);
+        });
+    }
+
+    // --- MOUSE & FISH LOGIC ---
+    const mouseGroup = new THREE.Group();
+    const mouseBody = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.25), new THREE.MeshStandardMaterial({color: 0xaaaaaa}));
+    mouseBody.position.y = 0.05; mouseGroup.add(mouseBody);
+    scene.add(mouseGroup); mouseGroup.visible = false; // Mouse is strictly invisible visually
+
+    function generateFishPattern(c1, c2, pattern) {
+        const c = document.createElement('canvas'); c.width = 256; c.height = 256; const ctx = c.getContext('2d');
+        ctx.fillStyle = c1; ctx.fillRect(0,0,256,256); ctx.fillStyle = c2;
+        if(pattern === 1) { for(let i=0; i<256; i+=20) { ctx.fillRect(i, 0, 10, 256); } } 
+        else if(pattern === 2) { for(let i=0; i<40; i++) { ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*256, 8, 0, Math.PI*2); ctx.fill(); } } 
+        else if(pattern === 3) { let grd = ctx.createLinearGradient(0,0,0,256); grd.addColorStop(0, c1); grd.addColorStop(1, c2); ctx.fillStyle = grd; ctx.fillRect(0,0,256,256); }
+        else if(pattern === 4) { // Nebula Spots
+            ctx.fillStyle = c2; // Purple
+            for(let i=0; i<30; i++) { ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*256, 12, 0, Math.PI*2); ctx.fill(); }
+            ctx.fillStyle = '#00ffff'; // Light Blue
+            for(let i=0; i<25; i++) { ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*256, 8, 0, Math.PI*2); ctx.fill(); }
+        }
+        return new THREE.CanvasTexture(c);
+    }
+
+    function create3DFish(fishData) {
+        const group = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ map: generateFishPattern(fishData.c1, fishData.c2, fishData.pat), metalness: 0.2, roughness: 0.7 });
+        const body = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), mat); body.scale.set(fishData.prop[0], fishData.prop[1], fishData.prop[2]); group.add(body);
+        const tail = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1, 3), mat); tail.position.z = -fishData.prop[2]; tail.rotation.x = -Math.PI / 2; group.add(tail);
+        const topFin = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 3), mat); topFin.position.set(0, fishData.prop[1], 0); group.add(topFin);
+        for (let side of [1, -1]) {
+            const eye = new THREE.Group(); eye.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({color: 0xffffff})));
+            const p = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({color: 0x000000})); p.position.x = 0.08 * side; eye.add(p);
+            eye.position.set(side * fishData.prop[0]*0.8, fishData.prop[1]*0.2, fishData.prop[2]*0.6); group.add(eye);
+        }
+        
+        // Add Bigger/Longer Horns for Mutant HornFish variations
+        if (fishData.name.includes("Horn")) {
+            for (let side of [1, -1]) {
+                const isNebula = fishData.name.includes("Nebula");
+                const hornColor = isNebula ? 0x111111 : 0x006400; // Black horns for Nebula
+                // Increased width from 0.15 to 0.25, and height from 0.7 to 1.4
+                const horn = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.4, 8), new THREE.MeshStandardMaterial({color: hornColor, roughness: 0.9}));
+                horn.position.set(side * fishData.prop[0]*0.5, fishData.prop[1]*0.9, fishData.prop[2]*0.3);
+                horn.rotation.x = Math.PI/3; horn.rotation.z = side * -Math.PI/4; group.add(horn);
+            }
+        }
+        
+        group.scale.setScalar(fishData.scale); return group;
+    }
+
+    let currentRodModel = null; const rodTipBone = new THREE.Object3D(); let rodGlowLight = null;
+
+    function buildRodModel() {
+        if(currentRodModel) camera.remove(currentRodModel);
+        const rodData = rods[currentRodIndex]; const rodGroup = new THREE.Group();
+        let poleMat, reelMat;
+        if(equipGlow) {
+            poleMat = new THREE.MeshStandardMaterial({ color: rodData.mainColor, emissive: rodData.mainColor, emissiveIntensity: 1.5 });
+            reelMat = new THREE.MeshStandardMaterial({ color: rodData.accent, emissive: rodData.accent, emissiveIntensity: 1.5 });
+            rodGlowLight = new THREE.PointLight(rodData.mainColor, 1.0, 5); rodGlowLight.position.set(0, 1.5, 0); rodGroup.add(rodGlowLight);
+        } else {
+            poleMat = new THREE.MeshStandardMaterial({ color: rodData.mainColor, metalness: 0.7, roughness: 0.2 }); reelMat = new THREE.MeshStandardMaterial({ color: rodData.accent, metalness: 0.9 });
+        }
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.04, 3, 8), poleMat); pole.position.y = 1.0; rodGroup.add(pole);
+        const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.15, 16), reelMat); reel.rotation.x = Math.PI/2; reel.position.set(0, 0.2, 0.05); rodGroup.add(reel);
+        rodTipBone.position.set(0, 2.5, 0); rodGroup.add(rodTipBone); rodGroup.position.set(0.6, -0.8, -0.8); rodGroup.rotation.set(-Math.PI / 3, 0, -0.1);
+        if(equipBiggerRod) rodGroup.scale.set(1.25, 1.25, 1.25);
+        camera.add(rodGroup); currentRodModel = rodGroup;
+    }
+    
+    const fishingLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2, transparent:true, opacity:0.9 }));
+    fishingLine.userData.target = new THREE.Vector3(0,-2,0); scene.add(fishingLine);
+    
+    buildTrophyWall(); buildRodModel(); scene.add(camera);
+
+    let moveVector = { x: 0, y: 0 }, cameraAngles = { yaw: 0, pitch: 0 }, isDragging = false, prevTouch = { x: 0, y: 0 }, joyId = null;
+    const joyZone = document.getElementById('joystick-zone'), joyKnob = document.getElementById('joystick-knob');
+    joyZone.addEventListener('touchstart', e => { if(joyId === null) { joyId = e.changedTouches[0].identifier; updateJoy(e.changedTouches[0]); } });
+    joyZone.addEventListener('touchmove', e => { for(let t of e.changedTouches) if(t.identifier === joyId) { updateJoy(t); e.preventDefault(); } }, {passive: false});
+    const endJoy = e => { for(let t of e.changedTouches) if(t.identifier === joyId) { joyId = null; joyKnob.style.transform = `translate(0px, 0px)`; moveVector = {x:0, y:0}; } };
+    joyZone.addEventListener('touchend', endJoy); joyZone.addEventListener('touchcancel', endJoy);
+
+    function updateJoy(t) {
+        const rect = joyZone.getBoundingClientRect(); let dx = t.clientX - (rect.left + rect.width/2), dy = t.clientY - (rect.top + rect.height/2);
+        const dist = Math.sqrt(dx*dx + dy*dy), max = rect.width/2; if(dist > max) { dx = (dx/dist)*max; dy = (dy/dist)*max; }
+        joyKnob.style.transform = `translate(${dx}px, ${dy}px)`; moveVector.x = dx / max; moveVector.y = dy / max;
+    }
+
+    function doCameraLook(dx, dy) {
+        if(!isViewingMode) {
+            cameraAngles.yaw -= dx * 0.005; cameraAngles.pitch -= dy * 0.005; cameraAngles.pitch = Math.max(-Math.PI/2.1, Math.min(Math.PI/2.1, cameraAngles.pitch));
+            camera.quaternion.setFromEuler(new THREE.Euler(cameraAngles.pitch, cameraAngles.yaw, 0, 'YXZ'));
+        } else if (viewingFishMesh) { viewingFishMesh.rotation.y += dx * 0.01; viewingFishMesh.rotation.x += dy * 0.01; }
+    }
+    document.addEventListener('touchstart', e => { if(e.target.id === 'game-canvas' && e.touches[0].clientX > window.innerWidth / 2) { isDragging = true; prevTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY }; } });
+    document.addEventListener('touchmove', e => { if(isDragging && e.target.id === 'game-canvas') { doCameraLook(e.touches[0].clientX - prevTouch.x, e.touches[0].clientY - prevTouch.y); prevTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY }; } }, {passive: false});
+    document.addEventListener('touchend', () => isDragging = false);
+
+    let keys = {w:false, a:false, s:false, d:false}; let isMouseDown = false;
+    document.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
+    document.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
+    document.addEventListener('mousedown', e => { isMouseDown = true; prevTouch = {x: e.clientX, y: e.clientY}; });
+    document.addEventListener('mousemove', e => { if(isMouseDown && e.target.id === 'game-canvas') { doCameraLook(e.clientX - prevTouch.x, e.clientY - prevTouch.y); prevTouch = {x: e.clientX, y: e.clientY}; } });
+    document.addEventListener('mouseup', () => isMouseDown = false);
+
+    const actionBtn = document.getElementById('action-btn'), msg = document.getElementById('interaction-msg');
+    let state = 'idle', hookTimeout = null, targetFish = null;
+    let barPos = 0, fishPos = 150, catchProgress = 0, isHoldingReel = false, fishTarget = 150, popupFishMesh = null;
+
+    actionBtn.addEventListener('mousedown', handleBtnDown); actionBtn.addEventListener('touchstart', handleBtnDown);
+    actionBtn.addEventListener('mouseup', handleBtnUp); actionBtn.addEventListener('touchend', handleBtnUp);
+
+    function handleBtnDown(e) {
+        e.preventDefault();
+        if(isShreddingActive) return; 
+        
+        if(state === 'near_shredder') { if (pendingBones > 0) grabBones(); else openShredder(); return; }
+        if(state === 'near_travel') { openTravelMenu(); return; }
+        if(state === 'near_teleport') { openModal('teleport-modal'); return; }
+        if(state === 'minigame') { isHoldingReel = true; return; }
+        if(state === 'near_shop') { openShop(); return; }
+        if(state === 'near_sell') { openSell(); return; }
+        
+        if(state === 'idle') {
+            if(camera.position.z > 8 || camera.position.z < -8 || camera.position.x > 8 || camera.position.x < -8) {
+                state = 'casting'; actionBtn.innerText = 'WAIT'; actionBtn.style.background = '#555';
+                const dir = new THREE.Vector3(); camera.getWorldDirection(dir); dir.y = 0; dir.normalize(); 
+                fishingLine.userData.target = camera.position.clone().add(dir.multiplyScalar(12)); fishingLine.userData.target.y = -0.5;
+                hookTimeout = setTimeout(() => { state = 'hooked'; actionBtn.innerText = 'HOOK!'; actionBtn.style.background = '#ff3333'; showAlert("FISH ON!", "white"); }, Math.random() * 3000 + 1500);
+            } else { showAlert("Get closer to edge!", "#ff4444"); }
+        } else if(state === 'hooked') { startMinigame(); } 
+        else if(state === 'casting') { clearTimeout(hookTimeout); resetAction(); }
+    }
+    function handleBtnUp(e) { e.preventDefault(); if(state === 'minigame') isHoldingReel = false; }
+
+    function startMinigame() {
+        state = 'minigame'; actionBtn.innerText = 'HOLD REEL'; actionBtn.style.background = 'orange';
+        document.getElementById('minigame-container').style.display = 'block'; document.getElementById('progress-container').style.display = 'block';
+        
+        if (currentLocation === 'mutant') {
+            // Mutant Island Exclusive Catch Pool
+            const possibleFish = fishDatabase.filter(f => f.id === 'Mutant');
+            targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
+        } else {
+            // Normal Main Island Fishing
+            const rod = rods[currentRodIndex]; let mathExp = equipBiggerRod ? 2.2 : 2.5; 
+            let caughtTier = Math.floor(rod.minTier + (Math.pow(Math.random(), mathExp) * ((rod.maxTier - rod.minTier) + 0.99))); caughtTier = Math.min(caughtTier, rod.maxTier);
+            const possibleFish = fishDatabase.filter(f => f.id === rarities[caughtTier].id);
+            targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
+        }
+        barPos = 0; fishPos = 150; catchProgress = 0;
+    }
+
+    function checkTrophyWall(fishRecord) {
+        topCatches.push(fishRecord); topCatches.sort((a, b) => b.value - a.value); if (topCatches.length > 3) topCatches.length = 3;
+        if(topCatches.some(c => c.value === fishRecord.value && c.date === fishRecord.date && c.name === fishRecord.name)) buildTrophyWall();
+    }
+
+    function catchFish() {
+        state = 'popup'; document.getElementById('minigame-container').style.display = 'none'; document.getElementById('progress-container').style.display = 'none';
+        const actualValue = Math.floor(targetFish.baseVal * (0.8 + (Math.random() * 0.4)));
+        const caughtRecord = { ...targetFish, value: actualValue };
+        inventory.push(caughtRecord); if(fishIndex[targetFish.name] === 0) totalCaughtCount++; fishIndex[targetFish.name]++;
+        
+        const caughtDateStr = new Date().toLocaleDateString(); checkTrophyWall({...caughtRecord, date: caughtDateStr});
+        saveGame();
+
+        document.getElementById('caught-fish-name').innerText = targetFish.name;
+        document.getElementById('caught-fish-name').className = `rarity-${targetFish.id}`;
+        const rarityElem = document.getElementById('caught-fish-rarity');
+        rarityElem.innerText = rarities.find(r => r.id === targetFish.id).name;
+        rarityElem.className = `rarity-${targetFish.id}`;
+        document.getElementById('catch-popup').style.display = 'block';
+
+        popupFishMesh = create3DFish(targetFish);
+        const maxProp = Math.max(targetFish.prop[0], targetFish.prop[1], targetFish.prop[2]) * targetFish.scale;
+        const catchScale = 1.0 / maxProp; popupFishMesh.scale.setScalar(catchScale); popupFishMesh.position.set(0, 0, -5.0); camera.add(popupFishMesh);
+    }
+
+    window.closeCatchPopup = function() { document.getElementById('catch-popup').style.display = 'none'; if(popupFishMesh) { camera.remove(popupFishMesh); popupFishMesh = null; } resetAction(); }
+    function resetAction() { state = 'idle'; actionBtn.innerText = 'CAST'; actionBtn.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)'; document.getElementById('minigame-container').style.display = 'none'; document.getElementById('progress-container').style.display = 'none'; updateHUD(); }
+
+    function updateHUD() { document.getElementById('money').innerText = money.toLocaleString(); document.getElementById('bones-count').innerText = bones.toLocaleString(); document.getElementById('current-rod').innerText = rods[currentRodIndex].name; }
+    function showAlert(text, color) { const box = document.getElementById('alert-box'); box.innerText = text; box.style.borderColor = color; box.style.display = 'block'; setTimeout(() => box.style.display = 'none', 2000); }
+    function openModal(id) { document.getElementById(id).style.display = 'block'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // --- INIT UI SEQUENCE ---
+    setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('loading-screen').style.display = 'none'; document.getElementById('ui-layer').style.opacity = '1'; }, 800); }, 2000);
+    updateHUD();
+
+    // --- TRAVEL LOGIC ---
+    function openTravelMenu() {
+        if(ownsMutantIsland) {
+            document.getElementById('travel-btn').innerText = "TRAVEL NOW";
+            document.getElementById('travel-desc').innerHTML = "Your pass is valid!<br>Ready to travel to Mutant Island?";
+        } else {
+            document.getElementById('travel-btn').innerText = "BUY TICKET";
+            document.getElementById('travel-desc').innerHTML = "Travel to the mysterious Mutant Island.<br>Cost: 10,000 Bones (One-Time).";
+        }
+        openModal('travel-modal');
+    }
+
+    window.buyOrTravelMutant = function() {
+        if (ownsMutantIsland) { closeModal('travel-modal'); triggerTravel('mutant'); } 
+        else {
+            if (bones >= 10000) { bones -= 10000; ownsMutantIsland = true; saveGame(); showAlert("Ticket Purchased!", "#39ff14"); openTravelMenu(); updateHUD(); } 
+            else { showAlert("Not enough bones!", "#ff4444"); }
+        }
+    }
+
+    window.goHome = function() { closeModal('teleport-modal'); triggerTravel('main'); }
+
+    function triggerTravel(dest) {
+        document.getElementById('loading-screen').style.display = 'flex'; document.getElementById('loading-screen').style.opacity = '1';
+        document.getElementById('loading-text').innerText = dest === 'mutant' ? 'Sailing to Mutant Island...' : 'Teleporting Home...';
+        setTimeout(() => {
+            currentLocation = dest; applyLocationVisuals(); saveGame();
+            camera.position.set(0, 2, 0); cameraAngles = {yaw: 0, pitch: 0}; camera.quaternion.setFromEuler(new THREE.Euler(0,0,0));
+            setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('loading-screen').style.display = 'none'; resetAction(); }, 800); }, 500);
+        }, 1500);
+    }
+
+    // --- MENUS ---
+    function getUpgradeBtnHTML(owned, equipped, type, cost, title, desc) {
+        if (!owned) return `<div class="card"><h4 style="margin:5px 0;">${title}</h4><p style="font-size:12px; color:#aaa; margin:5px 0;">${desc}</p><button class="upgrade-btn" onclick="buyUpgrade('${type}', ${cost})">Buy (${cost} 🦴)</button></div>`;
+        else return `<div class="card"><h4 style="margin:5px 0;">${title}</h4><p style="font-size:12px; color:#aaa; margin:5px 0;">${desc}</p><button class="${equipped ? 'unequip-btn' : 'equip-btn'}" onclick="toggleEquip('${type}')">${equipped ? 'Unequip' : 'Equip'}</button></div>`;
+    }
+
+    function openShop() {
+        openModal('shop-modal'); document.getElementById('total-caught-text').innerText = `${totalCaughtCount}/${fishDatabase.length}`;
+        const upGrid = document.getElementById('upgrade-shop-grid'); upGrid.innerHTML = '';
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsBiggerRod, equipBiggerRod, 'rod', 25, 'Bigger Rod', '+25% Size, +10% Better Fish');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsMouse, equipMouse, 'mouse', 50, 'Discounts', '10% Shop Discount');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsGlow, equipGlow, 'glow', 50, 'Glowing Rods', 'Makes rods glow 5x cooler!');
+        const shopGrid = document.getElementById('rod-shop-grid'); shopGrid.innerHTML = '';
+        rods.forEach((r, i) => {
+            let actualCost = r.cost; let priceHTML = `$${r.cost.toLocaleString()}`;
+            if(equipMouse && r.cost > 0) { actualCost = Math.floor(r.cost * 0.9); priceHTML = `<s>$${r.cost}</s> <span style="color:#38ef7d">$${actualCost}</span>`; }
+            shopGrid.innerHTML += `<div class="card"><h4 style="margin:5px 0;">${r.name} Rod</h4><p style="font-size:12px; color:#aaa; margin:5px 0;">Max: ${rarities[r.maxTier].name}</p>${currentRodIndex === i ? `<button disabled>Equipped</button>` : r.owned ? `<button class="equip-btn" onclick="equipRod(${i})">Equip</button>` : `<button onclick="buyRod(${i}, ${actualCost})">Buy (${priceHTML})</button>`}</div>`;
+        });
+        const indexGrid = document.getElementById('fish-index-grid'); indexGrid.innerHTML = '';
+        fishDatabase.forEach((f, i) => {
+            const caught = fishIndex[f.name];
+            indexGrid.innerHTML += `<div class="card ${caught > 0 ? `rarity-${f.id}` : ''}" ${caught > 0 ? `onclick="viewFish(${i})"` : ''} style="opacity: ${caught > 0 ? 1 : 0.3}"><strong style="font-size:16px">${caught > 0 ? f.name : '???'}</strong><br><span style="color:white; font-size:12px;">Caught: ${caught}</span></div>`;
+        });
+    }
+
+    window.buyRod = function(index, cost) { if(money >= cost) { money -= cost; rods[index].owned = true; saveGame(); equipRod(index); showAlert("Purchased!", "#38ef7d"); } else showAlert("Not enough money!", "#ff4444"); }
+    window.equipRod = function(index) { currentRodIndex = index; buildRodModel(); saveGame(); openShop(); }
+    window.buyUpgrade = function(type, cost) { if(bones >= cost) { bones -= cost; if(type === 'rod') { ownsBiggerRod = true; equipBiggerRod = true; buildRodModel(); } if(type === 'mouse') { ownsMouse = true; equipMouse = true; } if(type === 'glow') { ownsGlow = true; equipGlow = true; buildRodModel(); } saveGame(); openShop(); showAlert("Upgrade Unlocked!", "#ba68c8"); } else { showAlert("Not enough bones!", "#ff4444"); } }
+    window.toggleEquip = function(type) { if(type === 'rod') { equipBiggerRod = !equipBiggerRod; buildRodModel(); } if(type === 'mouse') { equipMouse = !equipMouse; mouseGroup.visible = false; } if(type === 'glow') { equipGlow = !equipGlow; buildRodModel(); } saveGame(); openShop(); }
+
+    function openSell() { openModal('sell-modal'); const grid = document.getElementById('inventory-grid'); grid.innerHTML = ''; if(inventory.length === 0) { grid.innerHTML = "<p style='color:#888;'>Inventory empty.</p>"; return; } inventory.forEach(f => { grid.innerHTML += `<div class="card rarity-${f.id}"><strong>${f.name}</strong><br><span style="color:#38ef7d;">$${f.value}</span></div>`; }); }
+    window.sellAllFish = function() { if(inventory.length === 0) return; let earned = inventory.reduce((sum, f) => sum + f.value, 0); money += earned; inventory = []; saveGame(); openSell(); showAlert(`Sold for $${earned}!`, "#38ef7d"); }
+
+    let shredSelection = [];
+    function openShredder() { shredSelection = []; openModal('shredder-modal'); renderShredderInventory(); }
+    function renderShredderInventory() {
+        const grid = document.getElementById('shredder-inventory-grid'); grid.innerHTML = '';
+        let shreddableFish = inventory.filter(f => f.id !== 'Mutant'); // Hide Mutants safely!
+        
+        if(shreddableFish.length === 0) { grid.innerHTML = "<p style='color:#888;'>No shreddable fish in inventory.</p>"; document.getElementById('shred-btn').innerText = `SHRED SELECTED (0)`; return; }
+        
+        shreddableFish.forEach((f, i) => { 
+            const isSelected = shredSelection.includes(i);
+            grid.innerHTML += `<div class="card rarity-${f.id}" style="border: 2px solid ${isSelected ? '#ff4444' : 'transparent'}; opacity: ${isSelected ? 1 : 0.6}" onclick="toggleShredSelect(${i})"><strong>${f.name}</strong><br><span style="color:#aaa;">Val: $${f.value}</span></div>`; 
+        });
+        document.getElementById('shred-btn').innerText = `SHRED SELECTED (${shredSelection.length})`;
+    }
+    window.toggleShredSelect = function(index) { const pos = shredSelection.indexOf(index); if (pos > -1) shredSelection.splice(pos, 1); else shredSelection.push(index); renderShredderInventory(); }
+    window.shredSelectedFish = function() {
+        if(shredSelection.length === 0) return; closeModal('shredder-modal');
+        let shreddableFish = inventory.filter(f => f.id !== 'Mutant');
+        let toShred = shreddableFish.filter((_, i) => shredSelection.includes(i));
+        
+        // Rebuild inventory keeping Mutants + Unselected fish
+        inventory = inventory.filter(f => f.id === 'Mutant' || !toShred.includes(f));
+        pendingBones = toShred.reduce((sum, f) => sum + Math.max(1, Math.floor(f.value / 10)), 0); saveGame();
+        
+        isShreddingActive = true; shredTimer = 2.0; state = 'shredding'; actionBtn.innerText = 'SHREDDING...'; actionBtn.style.background = '#888';
+    }
+    function grabBones() { bones += pendingBones; pendingBones = 0; visualBones.visible = false; saveGame(); showAlert(`Collected Bones!`, "#ba68c8"); actionBtn.innerText = 'SHREDDER'; actionBtn.style.background = 'linear-gradient(135deg, #555, #888)'; }
+
+    window.viewFish = function(index) {
+        closeModal('shop-modal'); const f = fishDatabase[index];
+        document.getElementById('viewer-title').innerText = f.name; document.getElementById('viewer-title').className = `rarity-${f.id}`;
+        document.getElementById('viewer-rarity').innerText = rarities.find(r=>r.id===f.id).name; document.getElementById('viewer-rarity').className = `rarity-${f.id}`;
+        if(viewingFishMesh) studioScene.remove(viewingFishMesh);
+        viewingFishMesh = create3DFish(f); viewingFishMesh.position.set(0, 0, 0); const maxScale = Math.max(f.prop[0], f.prop[1], f.prop[2]) * f.scale; viewingFishMesh.scale.setScalar(2.0 / maxScale);
+        studioScene.add(viewingFishMesh); document.getElementById('viewer-overlay').style.display = 'flex'; isViewingMode = true;
+    }
+    window.closeViewer = function() { document.getElementById('viewer-overlay').style.display = 'none'; isViewingMode = false; openModal('shop-modal'); }
+
+    // --- MAIN LOOP ---
+    const clock = new THREE.Clock();
+    if(pendingBones > 0) visualBones.visible = true; mouseGroup.visible = false;
+
+    function animate() {
+        requestAnimationFrame(animate); const dt = clock.getDelta(); const time = clock.getElapsedTime();
+
+        if (isViewingMode) {
+            if(viewingFishMesh && !isDragging) viewingFishMesh.rotation.y += 0.5 * dt; renderer.render(studioScene, studioCamera);
+        } else {
+            trophyFishMeshes.forEach(mesh => { mesh.rotation.y += 1.0 * dt; mesh.rotation.z = Math.sin(time * 2) * 0.1; });
+
+            if (state === 'idle' || state.startsWith('near_')) {
+                let mX = moveVector.x, mY = -moveVector.y;
+                if(keys.w) mY = 1; if(keys.s) mY = -1; if(keys.a) mX = -1; if(keys.d) mX = 1;
+                if (mX !== 0 || mY !== 0) {
+                    const speed = 7 * dt; const dir = new THREE.Vector3(); camera.getWorldDirection(dir); dir.y = 0; dir.normalize();
+                    const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,1,0)).normalize();
+                    camera.position.add(dir.multiplyScalar(mY * speed)); camera.position.add(right.multiplyScalar(mX * speed));
+                    camera.position.x = Math.max(-9.5, Math.min(9.5, camera.position.x)); camera.position.z = Math.max(-9.5, Math.min(9.5, camera.position.z));
+                }
+
+                const cPos = new THREE.Vector2(camera.position.x, camera.position.z);
+                
+                if (currentLocation === 'main') {
+                    if (cPos.distanceTo(new THREE.Vector2(-8, -6)) < 4) { state = 'near_shop'; actionBtn.innerText = 'SHOP'; actionBtn.style.background = '#ff4444'; msg.innerText = 'Tackle Shop'; msg.style.display = 'block'; }
+                    else if (cPos.distanceTo(new THREE.Vector2(8, -6)) < 4) { state = 'near_sell'; actionBtn.innerText = 'SELL'; actionBtn.style.background = 'linear-gradient(135deg, #11998e, #38ef7d)'; msg.innerText = 'Market'; msg.style.display = 'block'; }
+                    else if (cPos.distanceTo(new THREE.Vector2(0, 8)) < 4) { state = 'near_shredder'; if(pendingBones > 0) { actionBtn.innerText = 'GRAB BONES'; actionBtn.style.background = 'linear-gradient(135deg, #ba68c8, #7b1fa2)'; } else { actionBtn.innerText = 'SHREDDER'; actionBtn.style.background = 'linear-gradient(135deg, #555, #888)'; } msg.innerText = 'Shredder'; msg.style.display = 'block'; }
+                    else if (cPos.distanceTo(new THREE.Vector2(6, 8)) < 3) { state = 'near_travel'; actionBtn.innerText = 'FERRY'; actionBtn.style.background = '#ba68c8'; msg.innerText = 'Mutant Island'; msg.style.display = 'block'; }
+                    else { if(state.startsWith('near_')) state = 'idle'; actionBtn.innerText = 'CAST'; actionBtn.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)'; msg.style.display = 'none'; }
+                } else if (currentLocation === 'mutant') {
+                    if (cPos.distanceTo(new THREE.Vector2(0, -5)) < 4) { state = 'near_teleport'; actionBtn.innerText = 'TELEPORT'; actionBtn.style.background = '#00c6ff'; msg.innerText = 'Return Home'; msg.style.display = 'block'; }
+                    else { if(state.startsWith('near_')) state = 'idle'; actionBtn.innerText = 'CAST'; actionBtn.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)'; msg.style.display = 'none'; }
+                }
+            }
+
+            if (isShreddingActive) {
+                shredTimer -= dt; shredderGroup.position.x = Math.sin(time * 50) * 0.1; redButtonBase.scale.setScalar(1.0 + Math.sin(time * 20) * 0.2); 
+                if (shredTimer <= 0) { isShreddingActive = false; shredderGroup.position.set(0, 0.5, 8); redButtonBase.scale.setScalar(1.0); visualBones.visible = true; state = 'idle'; showAlert("Shredding Complete!", "#fff"); }
+            }
+
+            // Mouse is invisible, but we left the code running in background just in case
+            if(equipMouse) { mouseGroup.position.set(Math.sin(time * 1.5) * 4, 1.05, Math.cos(time * 1.5) * 4); mouseGroup.lookAt(Math.sin((time+0.1) * 1.5) * 4, 1.05, Math.cos((time+0.1) * 1.5) * 4); }
+
+            const tipPosWorld = new THREE.Vector3(); rodTipBone.getWorldPosition(tipPosWorld);
+            if(state === 'idle' || state.startsWith('near_') || state === 'popup') { fishingLine.userData.target.lerp(tipPosWorld.clone().add(new THREE.Vector3(0, -camera.position.y, 0)), 0.1); }
+            const pos = fishingLine.geometry.attributes.position.array; pos[0] = tipPosWorld.x; pos[1] = tipPosWorld.y; pos[2] = tipPosWorld.z; pos[3] = fishingLine.userData.target.x; pos[4] = fishingLine.userData.target.y; pos[5] = fishingLine.userData.target.z; fishingLine.geometry.attributes.position.needsUpdate = true;
+            
+            if (state === 'popup' && popupFishMesh) { popupFishMesh.rotation.y += 2 * dt; popupFishMesh.rotation.z = Math.sin(time*5)*0.1; }
+
+            if (state === 'minigame') {
+                if (isHoldingReel) barPos += 250 * dt; else barPos -= 250 * dt; barPos = Math.max(0, Math.min(270, barPos));
+                if (Math.random() < 0.05) fishTarget = Math.random() * 330;
+                fishPos += (fishTarget - fishPos) * 1.2 * dt; fishPos = Math.max(0, Math.min(342, fishPos));
+                if (fishPos >= barPos && fishPos <= barPos + 80) { catchProgress += 35 * dt; document.getElementById('catch-bar').style.borderColor = '#00ff00'; document.getElementById('catch-bar').style.background = 'rgba(0, 255, 0, 0.6)'; } 
+                else { catchProgress -= 10 * dt; document.getElementById('catch-bar').style.borderColor = '#ff4444'; document.getElementById('catch-bar').style.background = 'rgba(255, 68, 68, 0.4)'; }
+                catchProgress = Math.max(0, Math.min(100, catchProgress));
+                document.getElementById('catch-bar').style.bottom = barPos + 'px'; document.getElementById('fish-line').style.bottom = fishPos + 'px'; document.getElementById('progress-fill').style.height = catchProgress + '%';
+                if (catchProgress >= 100) catchFish();
+            }
+            
+            water.position.y = -0.5 + Math.sin(time) * 0.06; renderer.render(scene, camera);
+        }
+    }
+
+    window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); studioCamera.aspect = window.innerWidth / window.innerHeight; studioCamera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    animate();
+</script>
+</body>
+</html>
