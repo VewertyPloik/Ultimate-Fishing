@@ -62,6 +62,7 @@
         .rarity-Legendary { color: #FFD54F; text-shadow: 0 0 15px rgba(255,213,79,0.8); } .rarity-Exotic { color: #00ffff; text-shadow: 0 0 20px rgba(0,255,255,1); font-weight: 900; letter-spacing: 1px; }
         .rarity-Mutant { color: #39ff14; text-shadow: 0 0 15px rgba(57,255,20,0.8); font-weight: 900; letter-spacing: 2px; }
         .rarity-Candy { color: #ff66b2; text-shadow: 0 0 15px #ff66b2; font-weight: bold; letter-spacing: 1px; }
+        .rarity-Undead { color: #cccccc; text-shadow: 0 0 15px #ffffff; font-weight: 900; letter-spacing: 2px; }
 
         #alert-box { position: absolute; top: 15%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); color: white; padding: 15px 30px; border-radius: 12px; font-size: 18px; font-weight: bold; text-align: center; display: none; pointer-events: none; z-index: 5; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
     </style>
@@ -210,17 +211,23 @@
         ['Golden Koi','Exotic',5000,'#ffd700','#fff',2,[0.6, 0.7, 1.2],1.8], ['Diamond Sturgeon','Exotic',6000,'#e0ffff','#fff',3,[0.6, 0.5, 1.6],2.5],
         ['Galactic Angler','Exotic',7500,'#000','#ff00ff',2,[0.7, 0.8, 1.2],2.0], ['Void Ray','Exotic',8000,'#111','#4b0082',3,[1.5, 0.1, 1.5],2.5],
         ['Nebula Dragonfish','Exotic',10000,'#ff1493','#00ffff',1,[0.4, 0.5, 2.2],3.0],
-        ['Mutant Fish','Mutant',5000,'#90ee90','#006400',2,[0.8, 0.7, 1.4],2.5],
+        ['Mutant Fish','Mutant',2500,'#90ee90','#006400',2,[0.8, 0.7, 1.4],2.5],
         ['Toxic Fish','Mutant',5000,'#ffff00','#00ff00',2,[0.7, 0.6, 1.3],2.2],
-        ['Mutant HornFish','Mutant',6700,'#90ee90','#006400',2,[0.8, 0.8, 1.5],2.8],
-        ['Nebula Mutant Fish','Mutant',8000,'#90ee90','#800080',4,[0.9, 0.8, 1.6],3.0],
-        ['Nebula Mutant HornFish','Mutant',10500,'#90ee90','#800080',4,[0.9, 0.9, 1.7],3.5],
-        
-        ['Candy Fish','Candy',5000,'#ffb6c1','#add8e6',1,[0.6, 0.5, 1.2],1.0],
-        ['Chocolate Fish','Candy',5000,'#8b4513','#d2b48c',1,[0.7, 0.6, 1.3],1.2],
-        ['Candy Cane Fish','Candy',5000,'#ff0000','#ffffff',1,[0.5, 0.4, 1.5],1.1],
-        ['Sourfish','Candy',8000,'#4169e1','#00008b',2,[0.4, 0.5, 1.1],0.9],
-        ['Glowing Sourfish','Candy',12000,'#00ffff','#0000cd',2,[0.5, 0.6, 1.2],1.0]
+        ['Mutant HornFish','Mutant',7500,'#90ee90','#006400',2,[0.8, 0.8, 1.5],2.8],
+        ['Nebula Mutant Fish','Mutant',10000,'#90ee90','#800080',4,[0.9, 0.8, 1.6],3.0],
+        ['Nebula Mutant HornFish','Mutant',12500,'#90ee90','#800080',4,[0.9, 0.9, 1.7],3.5],
+        ['Candy Fish','Candy',2000,'#ffb6c1','#add8e6',1,[0.6, 0.5, 1.2],1.0],
+        ['Chocolate Fish','Candy',4000,'#8b4513','#d2b48c',1,[0.7, 0.6, 1.3],1.2],
+        ['Candy Cane Fish','Candy',6500,'#ff0000','#ffffff',1,[0.5, 0.4, 1.5],1.1],
+        ['Sourfish','Candy',10000,'#4169e1','#00008b',2,[0.4, 0.5, 1.1],0.9],
+        ['Glowing Sourfish','Candy',12500,'#00ffff','#0000cd',2,[0.5, 0.6, 1.2],1.0],
+
+        // SKULL ISLAND FISH
+        ['Skeleton Fish','Undead',7000,'#fff','#000',0,[0.8, 0.8, 1.2],1.0],
+        ['Big Skeleton Fish','Undead',8750,'#fff','#000',0,[1.6, 1.6, 2.4],2.0],
+        ['Golden Skeleton Fish','Undead',11500,'#ffd700','#000',0,[0.8, 0.8, 1.2],1.0],
+        ['Crate','Undead',0,'#8b4513','#5c4033',0,[1.0, 1.0, 1.0],1.0],
+        ['Galaxy Skeleton Fish','Undead',15000,'#fff','#4b0082',0,[0.8, 0.8, 1.2],1.0]
     ];
 
     const fishDatabase = rawFishData.map(f => ({ 
@@ -232,7 +239,8 @@
     
     let inventory = [], money = 0, bones = 0, totalCaughtCount = 0;
     
-    let ownsBiggerRod = false, ownsMouse = false, ownsGlow = false, ownsMutantIsland = false, ownsCandyIsland = false, ownsBetterBait = false;
+    let ownsBiggerRod = false, ownsMouse = false, ownsGlow = false, ownsBetterBait = false;
+    let ownsMutantIsland = false, ownsCandyIsland = false, ownsSkullIsland = false;
     let equipBiggerRod = false, equipMouse = false, equipGlow = false, equipBetterBait = false;
     let currentLocation = 'main'; 
     
@@ -244,7 +252,7 @@
         { id: 'Rare', name: 'Rare' }, { id: 'ExtraRare', name: 'Extra Rare' }, 
         { id: 'Epic', name: 'Epic' }, { id: 'Legendary', name: 'Legendary' }, 
         { id: 'Exotic', name: 'Exotic' }, { id: 'Mutant', name: 'Mutant' },
-        { id: 'Candy', name: 'Candy' }
+        { id: 'Candy', name: 'Candy' }, { id: 'Undead', name: 'Undead' }
     ];
 
     const rods = [
@@ -261,7 +269,8 @@
         const data = { 
             money, bones, inventory, fishIndex, totalCaughtCount, 
             rodsOwned: rods.map(r=>r.owned), currentRodIndex, 
-            ownsBiggerRod, ownsMouse, ownsGlow, ownsMutantIsland, ownsCandyIsland, ownsBetterBait, currentLocation,
+            ownsBiggerRod, ownsMouse, ownsGlow, ownsBetterBait, 
+            ownsMutantIsland, ownsCandyIsland, ownsSkullIsland, currentLocation,
             equipBiggerRod, equipMouse, equipGlow, equipBetterBait,
             topCatches, usedCodes
         };
@@ -281,8 +290,8 @@
                 if(data.rodsOwned) data.rodsOwned.forEach((o, i) => { if(rods[i]) rods[i].owned = o; });
                 currentRodIndex = data.currentRodIndex || 0;
                 
-                ownsBiggerRod = data.ownsBiggerRod || false; ownsMouse = data.ownsMouse || false; ownsGlow = data.ownsGlow || false; 
-                ownsMutantIsland = data.ownsMutantIsland || false; ownsCandyIsland = data.ownsCandyIsland || false; ownsBetterBait = data.ownsBetterBait || false;
+                ownsBiggerRod = data.ownsBiggerRod || false; ownsMouse = data.ownsMouse || false; ownsGlow = data.ownsGlow || false; ownsBetterBait = data.ownsBetterBait || false;
+                ownsMutantIsland = data.ownsMutantIsland || false; ownsCandyIsland = data.ownsCandyIsland || false; ownsSkullIsland = data.ownsSkullIsland || false;
                 equipBiggerRod = data.equipBiggerRod || false; equipMouse = data.equipMouse || false; equipGlow = data.equipGlow || false; equipBetterBait = data.equipBetterBait || false;
                 
                 currentLocation = data.currentLocation || 'main';
@@ -330,9 +339,7 @@
     sand.rotation.x = -Math.PI / 2; sand.position.y = -3; scene.add(sand);
     
     // Main Island Group
-    const mainIslandGroup = new THREE.Group();
-    scene.add(mainIslandGroup);
-    
+    const mainIslandGroup = new THREE.Group(); scene.add(mainIslandGroup);
     const dock = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), dockWoodMat); dock.receiveShadow = true; dock.castShadow = true; mainIslandGroup.add(dock);
 
     const shopGroup = new THREE.Group(); shopGroup.position.set(-8, 1.5, -6);
@@ -375,17 +382,14 @@
 
     // --- TRAVEL SIGN ---
     const travelSignGroup = new THREE.Group();
-    travelSignGroup.position.set(6, 0.5, 8); 
-    travelSignGroup.rotation.y = Math.PI;
+    travelSignGroup.position.set(6, 0.5, 8); travelSignGroup.rotation.y = Math.PI;
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2), dockWoodMat); post.position.y = 1; travelSignGroup.add(post);
     const board = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.0, 0.1), dockWoodMat); board.position.set(0, 1.6, 0.06); travelSignGroup.add(board);
     mainIslandGroup.add(travelSignGroup);
     let activeSignSprite = null;
 
     function generateTextSprite(textLines, fontSize, yOffset) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 256; canvas.height = 128; 
-        const ctx = canvas.getContext('2d');
+        const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 128; const ctx = canvas.getContext('2d');
         ctx.clearRect(0,0,256,128); ctx.textAlign = 'center'; ctx.fillStyle = 'white';
         textLines.forEach((line, i) => {
             let color = 'white'; let fSize = fontSize;
@@ -401,39 +405,37 @@
 
     function updateSign() {
         if(activeSignSprite) travelSignGroup.remove(activeSignSprite);
-        let lines = ["EXOTIC FERRIES", "Mutant & Candy"];
+        let lines = ["EXOTIC FERRIES", "Mutant, Candy", "& Skull"];
         activeSignSprite = generateTextSprite(lines, 24, 1.6);
         activeSignSprite.position.z = 0.12; travelSignGroup.add(activeSignSprite);
     }
     updateSign();
 
-    // --- MUTANT ISLAND GROUP ---
-    const mutantIslandGroup = new THREE.Group();
-    scene.add(mutantIslandGroup);
-    const mutantDockMat = new THREE.MeshStandardMaterial({ map: generateWoodTexture('#4b3621', '#2e1c0d'), roughness: 0.9 });
-    const mutantDock = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), mutantDockMat);
-    mutantDock.receiveShadow = true; mutantDock.castShadow = true; mutantIslandGroup.add(mutantDock);
-    const mutantTeleporter = new THREE.Group(); mutantTeleporter.position.set(0, 0.5, -5); 
-    const mPad = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 32), new THREE.MeshStandardMaterial({color: 0x000000, metalness: 0.9})); mPad.position.y = 0.1; mutantTeleporter.add(mPad);
-    const mGlow = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x00c6ff, emissive: 0x00c6ff, emissiveIntensity: 2.0})); mGlow.rotation.x = Math.PI/2; mGlow.position.y = 0.2; mutantTeleporter.add(mGlow);
-    mutantIslandGroup.add(mutantTeleporter);
+    // --- ISLAND GROUPS ---
+    const mutantIslandGroup = new THREE.Group(); scene.add(mutantIslandGroup);
+    const mutantDock = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), new THREE.MeshStandardMaterial({ map: generateWoodTexture('#4b3621', '#2e1c0d'), roughness: 0.9 })); mutantIslandGroup.add(mutantDock);
+    const mPadGroup = new THREE.Group(); mPadGroup.position.set(0, 0.5, -5); 
+    mPadGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 32), new THREE.MeshStandardMaterial({color: 0x000000, metalness: 0.9})).translateY(0.1));
+    const mGlow = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x00c6ff, emissive: 0x00c6ff, emissiveIntensity: 2.0})); mGlow.rotation.x = Math.PI/2; mGlow.position.y = 0.2; mPadGroup.add(mGlow); mutantIslandGroup.add(mPadGroup);
 
-    // --- CANDY ISLAND GROUP ---
-    const candyIslandGroup = new THREE.Group();
-    scene.add(candyIslandGroup);
-    const candyDockMat = dockWoodMat;
-    const candyDock = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), candyDockMat);
-    candyDock.receiveShadow = true; candyDock.castShadow = true; candyIslandGroup.add(candyDock);
-    const candyTeleporter = new THREE.Group(); candyTeleporter.position.set(0, 0.5, -5); 
-    const cPad = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 32), new THREE.MeshStandardMaterial({color: 0x000000, metalness: 0.9})); cPad.position.y = 0.1; candyTeleporter.add(cPad);
-    const cGlow = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x00c6ff, emissive: 0x00c6ff, emissiveIntensity: 2.0})); cGlow.rotation.x = Math.PI/2; cGlow.position.y = 0.2; candyTeleporter.add(cGlow);
-    candyIslandGroup.add(candyTeleporter);
+    const candyIslandGroup = new THREE.Group(); scene.add(candyIslandGroup);
+    candyIslandGroup.add(new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), dockWoodMat));
+    const cPadGroup = new THREE.Group(); cPadGroup.position.set(0, 0.5, -5); 
+    cPadGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 32), new THREE.MeshStandardMaterial({color: 0x000000, metalness: 0.9})).translateY(0.1));
+    const cGlow = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x00c6ff, emissive: 0x00c6ff, emissiveIntensity: 2.0})); cGlow.rotation.x = Math.PI/2; cGlow.position.y = 0.2; cPadGroup.add(cGlow); candyIslandGroup.add(cPadGroup);
 
-    // Apply Location visuals
+    // SKULL ISLAND
+    const skullIslandGroup = new THREE.Group(); scene.add(skullIslandGroup);
+    skullIslandGroup.add(new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), dockWoodMat));
+    const sPadGroup = new THREE.Group(); sPadGroup.position.set(0, 0.5, -5); 
+    sPadGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 32), new THREE.MeshStandardMaterial({color: 0x000000, metalness: 0.9})).translateY(0.1));
+    const sGlow = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x0088ff, emissive: 0x0088ff, emissiveIntensity: 2.0})); sGlow.rotation.x = Math.PI/2; sGlow.position.y = 0.2; sPadGroup.add(sGlow); skullIslandGroup.add(sPadGroup);
+
     function applyLocationVisuals() {
         mainIslandGroup.visible = (currentLocation === 'main');
         mutantIslandGroup.visible = (currentLocation === 'mutant');
         candyIslandGroup.visible = (currentLocation === 'candy');
+        skullIslandGroup.visible = (currentLocation === 'skull');
 
         if(currentLocation === 'main') {
             water.material.color.setHex(0x0077dd); sand.material.color.setHex(0xdeb887);
@@ -444,6 +446,9 @@
         } else if (currentLocation === 'candy') {
             water.material.color.setHex(0xff99cc); sand.material.color.setHex(0xffffff); 
             scene.background = new THREE.Color(0xffe6f2); scene.fog = new THREE.FogExp2(0xffe6f2, 0.02);
+        } else if (currentLocation === 'skull') {
+            water.material.color.setHex(0x555555); sand.material.color.setHex(0x222222); 
+            scene.background = new THREE.Color(0x2a2a2a); scene.fog = new THREE.FogExp2(0x2a2a2a, 0.03);
         }
     }
     applyLocationVisuals();
@@ -464,9 +469,7 @@
 
     // --- MOUSE & FISH LOGIC ---
     const mouseGroup = new THREE.Group();
-    const mouseBody = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.25), new THREE.MeshStandardMaterial({color: 0xaaaaaa}));
-    mouseBody.position.y = 0.05; mouseGroup.add(mouseBody);
-    scene.add(mouseGroup); mouseGroup.visible = false; 
+    const mouseBody = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.25), new THREE.MeshStandardMaterial({color: 0xaaaaaa})); mouseBody.position.y = 0.05; mouseGroup.add(mouseBody); scene.add(mouseGroup); mouseGroup.visible = false; 
 
     function generateFishPattern(c1, c2, pattern) {
         const c = document.createElement('canvas'); c.width = 256; c.height = 256; const ctx = c.getContext('2d');
@@ -475,43 +478,73 @@
         else if(pattern === 2) { for(let i=0; i<40; i++) { ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*256, 8, 0, Math.PI*2); ctx.fill(); } } 
         else if(pattern === 3) { let grd = ctx.createLinearGradient(0,0,0,256); grd.addColorStop(0, c1); grd.addColorStop(1, c2); ctx.fillStyle = grd; ctx.fillRect(0,0,256,256); }
         else if(pattern === 4) { 
-            ctx.fillStyle = c2; 
-            for(let i=0; i<30; i++) { ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*256, 12, 0, Math.PI*2); ctx.fill(); }
-            ctx.fillStyle = '#00ffff'; 
-            for(let i=0; i<25; i++) { ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*256, 8, 0, Math.PI*2); ctx.fill(); }
-        }
-        return new THREE.CanvasTexture(c);
+            ctx.fillStyle = c2; for(let i=0; i<30; i++) { ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*256, 12, 0, Math.PI*2); ctx.fill(); }
+            ctx.fillStyle = '#00ffff'; for(let i=0; i<25; i++) { ctx.beginPath(); ctx.arc(Math.random()*256, Math.random()*256, 8, 0, Math.PI*2); ctx.fill(); }
+        } return new THREE.CanvasTexture(c);
     }
 
     function create3DFish(fishData) {
         const group = new THREE.Group();
-        const mat = new THREE.MeshStandardMaterial({ map: generateFishPattern(fishData.c1, fishData.c2, fishData.pat), metalness: 0.2, roughness: 0.7 });
-        
-        if (fishData.name === 'Glowing Sourfish') {
-            mat.emissive = new THREE.Color(0x00ffff);
-            mat.emissiveIntensity = 0.4;
-            const glowLight = new THREE.PointLight(0x00ffff, 1.0, 4);
-            group.add(glowLight);
-        }
 
-        const bodyGeo = new THREE.SphereGeometry(1, 32, 16);
-        const body = new THREE.Mesh(bodyGeo, mat); 
-        body.scale.set(fishData.prop[0], fishData.prop[1], fishData.prop[2]); group.add(body);
-        
-        const tail = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1, 3), mat); tail.position.z = -fishData.prop[2]; tail.rotation.x = -Math.PI / 2; group.add(tail);
-        const topFin = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 3), mat); topFin.position.set(0, fishData.prop[1], 0); group.add(topFin);
-        for (let side of [1, -1]) {
-            const eye = new THREE.Group(); eye.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({color: 0xffffff})));
-            const p = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({color: 0x000000})); p.position.x = 0.08 * side; eye.add(p);
-            eye.position.set(side * fishData.prop[0]*0.8, fishData.prop[1]*0.2, fishData.prop[2]*0.6); group.add(eye);
-        }
-        
-        if (fishData.name.includes("Horn")) {
+        if (fishData.name === 'Crate') {
+            const crateMat = new THREE.MeshStandardMaterial({map: generateWoodTexture('#8b4513', '#5c4033'), roughness: 0.9});
+            const crateMesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.5), crateMat);
+            group.add(crateMesh);
+        } else if (fishData.id === 'Undead') {
+            // Skeleton Fish logic
+            const boneColor = fishData.name.includes('Golden') ? 0xffd700 : 0xeeeeee;
+            const boneMat = new THREE.MeshStandardMaterial({color: boneColor, roughness: 0.5});
+            
+            if (fishData.name.includes('Galaxy')) {
+                boneMat.emissive = new THREE.Color(0x4b0082); // purple-ish blue
+                boneMat.emissiveIntensity = 0.5;
+                const gLight = new THREE.PointLight(0x0000ff, 1.0, 4);
+                group.add(gLight);
+            }
+            
+            // Head
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), boneMat);
+            head.scale.set(1, 0.8, 0.5); head.position.x = fishData.prop[0] * 0.8; group.add(head);
+
+            // Spine
+            const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.05, 1.8), boneMat);
+            spine.rotation.z = Math.PI / 2; spine.position.x = -0.1; group.add(spine);
+
+            // Ribs
+            for(let i=0; i<4; i++) {
+                const rib = new THREE.Mesh(new THREE.TorusGeometry(0.4 - i*0.06, 0.04, 8, 16, Math.PI), boneMat);
+                rib.rotation.y = Math.PI / 2; rib.position.x = 0.3 - i*0.4; group.add(rib);
+            }
+
+            // Eyes
+            const eyeColor = fishData.name.includes('Galaxy') ? 0x39ff14 : 0x000000;
+            const eyeMat = new THREE.MeshBasicMaterial({color: eyeColor});
             for (let side of [1, -1]) {
-                const hornColor = fishData.name.includes("Nebula") ? 0x111111 : 0x006400; 
-                const horn = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.4, 8), new THREE.MeshStandardMaterial({color: hornColor, roughness: 0.9}));
-                horn.position.set(side * fishData.prop[0]*0.5, fishData.prop[1]*0.9, fishData.prop[2]*0.3);
-                horn.rotation.x = Math.PI/3; horn.rotation.z = side * -Math.PI/4; group.add(horn);
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.12), eyeMat);
+                eye.position.set(fishData.prop[0]*0.8 + 0.15, 0.1, side * 0.22); group.add(eye);
+            }
+        } else {
+            // Normal Fish Logic
+            const mat = new THREE.MeshStandardMaterial({ map: generateFishPattern(fishData.c1, fishData.c2, fishData.pat), metalness: 0.2, roughness: 0.7 });
+            if (fishData.name === 'Glowing Sourfish') { mat.emissive = new THREE.Color(0x00ffff); mat.emissiveIntensity = 0.4; group.add(new THREE.PointLight(0x00ffff, 1.0, 4)); }
+
+            const body = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), mat); 
+            body.scale.set(fishData.prop[0], fishData.prop[1], fishData.prop[2]); group.add(body);
+            
+            const tail = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1, 3), mat); tail.position.z = -fishData.prop[2]; tail.rotation.x = -Math.PI / 2; group.add(tail);
+            const topFin = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 3), mat); topFin.position.set(0, fishData.prop[1], 0); group.add(topFin);
+            
+            for (let side of [1, -1]) {
+                const eye = new THREE.Group(); eye.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({color: 0xffffff})));
+                const p = new THREE.Mesh(new THREE.SphereGeometry(0.05), new THREE.MeshBasicMaterial({color: 0x000000})); p.position.x = 0.08 * side; eye.add(p);
+                eye.position.set(side * fishData.prop[0]*0.8, fishData.prop[1]*0.2, fishData.prop[2]*0.6); group.add(eye);
+            }
+            if (fishData.name.includes("Horn")) {
+                for (let side of [1, -1]) {
+                    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.4, 8), new THREE.MeshStandardMaterial({color: fishData.name.includes("Nebula") ? 0x111111 : 0x006400, roughness: 0.9}));
+                    horn.position.set(side * fishData.prop[0]*0.5, fishData.prop[1]*0.9, fishData.prop[2]*0.3);
+                    horn.rotation.x = Math.PI/3; horn.rotation.z = side * -Math.PI/4; group.add(horn);
+                }
             }
         }
         
@@ -536,17 +569,11 @@
         rodTipBone.position.set(0, 2.5, 0); rodGroup.add(rodTipBone); 
         
         if (rodData.id === 'golden') {
-            const lightningGroup = new THREE.Group();
-            lightningGroup.name = 'lightningBolts';
+            const lightningGroup = new THREE.Group(); lightningGroup.name = 'lightningBolts';
             const boltMat = new THREE.LineBasicMaterial({ color: 0x88CCFF, transparent: true, opacity: 0.9, linewidth: 2 });
-            for(let i=0; i<3; i++) {
-                const pts = [];
-                for(let j=0; j<6; j++) pts.push(new THREE.Vector3((Math.random()-0.5)*0.15, j*0.5, (Math.random()-0.5)*0.15));
-                const geo = new THREE.BufferGeometry().setFromPoints(pts);
-                lightningGroup.add(new THREE.Line(geo, boltMat));
-            }
-            lightningGroup.position.y = 0.5;
-            rodGroup.add(lightningGroup);
+            for(let i=0; i<3; i++) { const pts = []; for(let j=0; j<6; j++) pts.push(new THREE.Vector3((Math.random()-0.5)*0.15, j*0.5, (Math.random()-0.5)*0.15));
+                lightningGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), boltMat)); }
+            lightningGroup.position.y = 0.5; rodGroup.add(lightningGroup);
         }
 
         rodGroup.position.set(0.6, -0.8, -0.8); rodGroup.rotation.set(-Math.PI / 3, 0, -0.1);
@@ -630,6 +657,15 @@
             possibleFish = fishDatabase.filter(f => f.id === 'Mutant');
         } else if (currentLocation === 'candy') {
             possibleFish = fishDatabase.filter(f => f.id === 'Candy');
+        } else if (currentLocation === 'skull') {
+            let roll = Math.random() * 100;
+            let targetName = 'Skeleton Fish';
+            if (roll < 30) targetName = 'Skeleton Fish';                 // 30%
+            else if (roll < 56) targetName = 'Big Skeleton Fish';        // 26%
+            else if (roll < 76) targetName = 'Golden Skeleton Fish';     // 20%
+            else if (roll < 92) targetName = 'Crate';                    // 16%
+            else targetName = 'Galaxy Skeleton Fish';                    // 8%
+            possibleFish = [fishDatabase.find(f => f.name === targetName)];
         } else {
             let mathExp = equipBiggerRod ? 2.2 : 2.5; 
             let caughtTier = Math.floor(rod.minTier + (Math.pow(Math.random(), mathExp) * ((rod.maxTier - rod.minTier) + 0.99))); 
@@ -637,14 +673,11 @@
             possibleFish = fishDatabase.filter(f => f.id === rarities[caughtTier].id);
         }
 
-        // --- BETTER BAIT LOGIC ---
+        // Better Bait overrides if uncaught
         if (equipBetterBait) {
             const uncaughtFish = possibleFish.filter(f => fishIndex[f.name] === 0);
-            if (uncaughtFish.length > 0 && Math.random() <= 0.33) {
-                targetFish = uncaughtFish[Math.floor(Math.random() * uncaughtFish.length)];
-            } else {
-                targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
-            }
+            if (uncaughtFish.length > 0 && Math.random() <= 0.33) targetFish = uncaughtFish[Math.floor(Math.random() * uncaughtFish.length)];
+            else targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
         } else {
             targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
         }
@@ -661,9 +694,13 @@
         state = 'popup'; document.getElementById('minigame-container').style.display = 'none'; document.getElementById('progress-container').style.display = 'none';
         const actualValue = Math.floor(targetFish.baseVal * (0.8 + (Math.random() * 0.4)));
         const caughtRecord = { ...targetFish, value: actualValue };
-        inventory.push(caughtRecord); if(fishIndex[targetFish.name] === 0) totalCaughtCount++; fishIndex[targetFish.name]++;
         
-        const caughtDateStr = new Date().toLocaleDateString(); checkTrophyWall({...caughtRecord, date: caughtDateStr});
+        inventory.push(caughtRecord); 
+        if(fishIndex[targetFish.name] === 0) totalCaughtCount++; 
+        fishIndex[targetFish.name]++;
+        
+        const caughtDateStr = new Date().toLocaleDateString(); 
+        if(targetFish.name !== 'Crate') checkTrophyWall({...caughtRecord, date: caughtDateStr});
         saveGame();
 
         document.getElementById('caught-fish-name').innerText = targetFish.name;
@@ -678,7 +715,37 @@
         const catchScale = 1.0 / maxProp; popupFishMesh.scale.setScalar(catchScale); popupFishMesh.position.set(0, 0, -5.0); camera.add(popupFishMesh);
     }
 
-    window.closeCatchPopup = function() { document.getElementById('catch-popup').style.display = 'none'; if(popupFishMesh) { camera.remove(popupFishMesh); popupFishMesh = null; } resetAction(); }
+    function animateBones(amount) {
+        const target = document.getElementById('bones-count').getBoundingClientRect();
+        for(let i=0; i<15; i++) {
+            let b = document.createElement('div');
+            b.innerText = '🦴';
+            b.style.position = 'absolute'; b.style.left = '50%'; b.style.top = '40%';
+            b.style.fontSize = (Math.random()*15 + 20) + 'px'; b.style.zIndex = '1000';
+            b.style.transform = `translate(${(Math.random()-0.5)*100}px, ${(Math.random()-0.5)*100}px)`;
+            b.style.transition = `all ${1 + Math.random()*0.5}s ease-in`;
+            document.body.appendChild(b);
+            setTimeout(() => { b.style.left = (target.left + target.width/2) + 'px'; b.style.top = (target.top + target.height/2) + 'px'; b.style.opacity = '0'; b.style.transform = 'scale(0.5)'; }, 50);
+            setTimeout(() => b.remove(), 1600);
+        }
+        setTimeout(() => showAlert(`+${amount} Bones!`, '#ba68c8'), 1000);
+    }
+
+    window.closeCatchPopup = function() { 
+        document.getElementById('catch-popup').style.display = 'none'; 
+        if(popupFishMesh) { camera.remove(popupFishMesh); popupFishMesh = null; } 
+
+        // CRATE LOGIC
+        if (targetFish && targetFish.name === 'Crate') {
+            inventory.pop(); // Take crate out of inventory
+            const bonesWon = Math.floor(Math.random() * (800 - 150 + 1)) + 150;
+            bones += bonesWon;
+            saveGame(); updateHUD(); animateBones(bonesWon);
+        }
+
+        resetAction(); 
+    }
+    
     function resetAction() { state = 'idle'; actionBtn.innerText = 'CAST'; actionBtn.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)'; document.getElementById('minigame-container').style.display = 'none'; document.getElementById('progress-container').style.display = 'none'; updateHUD(); }
 
     function updateHUD() { document.getElementById('money').innerText = money.toLocaleString(); document.getElementById('bones-count').innerText = bones.toLocaleString(); document.getElementById('current-rod').innerText = rods[currentRodIndex].name; }
@@ -690,26 +757,14 @@
     setTimeout(() => { document.getElementById('loading-screen').style.opacity = '0'; setTimeout(() => { document.getElementById('loading-screen').style.display = 'none'; document.getElementById('ui-layer').style.opacity = '1'; }, 800); }, 2000);
     updateHUD();
 
-    // --- CODES LOGIC ---
     window.promptCode = function() {
-        const code = prompt("Enter Secret Code:");
-        if (!code) return;
+        const code = prompt("Enter Secret Code:"); if (!code) return;
         const c = code.toLowerCase().trim();
-        
-        if (c === "reset") {
-            if (confirm("Are you sure you want to completely reset your progress? This cannot be undone!")) {
-                localStorage.removeItem('ultimateFishingSave');
-                location.reload();
-            }
-            return;
-        }
-        
+        if (c === "reset") { if (confirm("Are you sure you want to completely reset your progress?")) { localStorage.removeItem('ultimateFishingSave'); location.reload(); } return; }
         if (usedCodes.includes(c)) { showAlert("Code already used!", "#ff4444"); return; }
-        
         if (c === "mon3y") { money += 300000; usedCodes.push(c); showAlert("+ $300,000!", "#38ef7d"); }
         else if (c === "bonesfordays") { bones += 300000; usedCodes.push(c); showAlert("+ 300,000 Bones!", "#ba68c8"); }
         else { showAlert("Invalid Code", "#ff4444"); return; }
-        
         saveGame();
     }
 
@@ -727,20 +782,19 @@
         else candyHTML += `<button style="background: linear-gradient(135deg, #ba68c8, #7b1fa2);" onclick="buyIsland('candy')">BUY (25K 🦴)</button></div>`;
         grid.innerHTML += candyHTML;
 
+        let skullHTML = `<div class="card"><h3 style="color:#ccc; margin:5px 0; font-size: 22px; text-shadow:0 0 5px #fff;">Skull Island</h3><p style="font-size:14px; color:#aaa;">Dark waters and skeletal catches.</p>`;
+        if(ownsSkullIsland) skullHTML += `<button style="background: linear-gradient(135deg, #555, #222);" onclick="triggerTravel('skull')">TRAVEL</button></div>`;
+        else skullHTML += `<button style="background: linear-gradient(135deg, #ba68c8, #7b1fa2);" onclick="buyIsland('skull')">BUY (50K 🦴)</button></div>`;
+        grid.innerHTML += skullHTML;
+
         openModal('travel-modal');
     }
 
     window.buyIsland = function(island) {
-        if(island === 'mutant') {
-            if (bones >= 10000) { 
-                bones -= 10000; ownsMutantIsland = true; showAlert("Mutant Island Unlocked!", "#38ef7d");
-            } else { showAlert("Not enough bones!", "#ff4444"); return; }
-        } else if (island === 'candy') {
-            if (bones >= 25000) { 
-                bones -= 25000; ownsCandyIsland = true; showAlert("Candy Island Unlocked!", "#ff66b2");
-            } else { showAlert("Not enough bones!", "#ff4444"); return; }
-        }
-        updateSign(); saveGame(); updateHUD(); openTravelMenu(); 
+        if(island === 'mutant') { if (bones >= 10000) { bones -= 10000; ownsMutantIsland = true; showAlert("Mutant Island Unlocked!", "#38ef7d"); } else { showAlert("Not enough bones!", "#ff4444"); return; } } 
+        else if (island === 'candy') { if (bones >= 25000) { bones -= 25000; ownsCandyIsland = true; showAlert("Candy Island Unlocked!", "#ff66b2"); } else { showAlert("Not enough bones!", "#ff4444"); return; } }
+        else if (island === 'skull') { if (bones >= 50000) { bones -= 50000; ownsSkullIsland = true; showAlert("Skull Island Unlocked!", "#aaaaaa"); } else { showAlert("Not enough bones!", "#ff4444"); return; } }
+        saveGame(); openTravelMenu(); 
     }
 
     window.goHome = function() { closeModal('teleport-modal'); triggerTravel('main'); }
@@ -751,6 +805,7 @@
         let loadTxt = 'Teleporting Home...';
         if(dest === 'mutant') loadTxt = 'Sailing to Mutant Island...';
         if(dest === 'candy') loadTxt = 'Traveling to Candy Island...';
+        if(dest === 'skull') loadTxt = 'Entering Skull Island...';
         document.getElementById('loading-text').innerText = loadTxt;
         
         setTimeout(() => {
@@ -769,21 +824,17 @@
     function openShop() {
         openModal('shop-modal'); document.getElementById('total-caught-text').innerText = `${totalCaughtCount}/${fishDatabase.length}`;
         const upGrid = document.getElementById('upgrade-shop-grid'); upGrid.innerHTML = '';
-        upGrid.innerHTML += getUpgradeBtnHTML(ownsBiggerRod, equipBiggerRod, 'rod', 250, 'Underwater Upgrades', '+25% Bigger Rod, +10% Better Fish');
-        upGrid.innerHTML += getUpgradeBtnHTML(ownsMouse, equipMouse, 'mouse', 250, 'Merchants Friend?', '10% Shop Discounts For All Rods');
-        upGrid.innerHTML += getUpgradeBtnHTML(ownsGlow, equipGlow, 'glow', 50, 'The Light', 'Makes fishing rods glow!');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsBiggerRod, equipBiggerRod, 'rod', 250, 'Underwater Upgrades', '+25% Rod Size, +10% Better Fish');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsMouse, equipMouse, 'mouse', 250, 'Merchants Friend?', '10% Shop Discount For All Rods');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsGlow, equipGlow, 'glow', 250, 'The Light', 'Makes fishing rods glow!');
         upGrid.innerHTML += getUpgradeBtnHTML(ownsBetterBait, equipBetterBait, 'bait', 1250, 'One With The Fish', '+33% chance to hook an uncaught fish');
         
         const shopGrid = document.getElementById('rod-shop-grid'); shopGrid.innerHTML = '';
         rods.forEach((r, i) => {
             if (r.hidden && !r.owned) return; 
-
             let actualCost = r.cost; let priceHTML = `$${r.cost.toLocaleString()}`;
             if(equipMouse && r.cost > 0) { actualCost = Math.floor(r.cost * 0.9); priceHTML = `<s>$${r.cost.toLocaleString()}</s> <span style="color:#38ef7d">$${actualCost.toLocaleString()}</span>`; }
-            
-            let label = `Max: ${rarities[r.maxTier].name}`;
-            if(r.id === 'golden') label = `Exotic Only`;
-
+            let label = `Max: ${rarities[r.maxTier].name}`; if(r.id === 'golden') label = `Exotic Only`;
             shopGrid.innerHTML += `<div class="card"><h4 style="margin:5px 0; color:${r.id==='golden'?'#FFD700':'white'}">${r.name} Rod</h4><p style="font-size:12px; color:#aaa; margin:5px 0;">${label}</p>${currentRodIndex === i ? `<button disabled>Equipped</button>` : r.owned ? `<button class="equip-btn" onclick="equipRod(${i})">Equip</button>` : `<button onclick="buyRod(${i}, ${actualCost})">Buy (${priceHTML})</button>`}</div>`;
         });
         const indexGrid = document.getElementById('fish-index-grid'); indexGrid.innerHTML = '';
@@ -805,25 +856,18 @@
     function openShredder() { shredSelection = []; openModal('shredder-modal'); renderShredderInventory(); }
     function renderShredderInventory() {
         const grid = document.getElementById('shredder-inventory-grid'); grid.innerHTML = '';
-        let shreddableFish = inventory.filter(f => f.id !== 'Mutant' && f.id !== 'Candy'); 
-        
+        let shreddableFish = inventory.filter(f => f.id !== 'Mutant' && f.id !== 'Candy' && f.id !== 'Undead'); 
         if(shreddableFish.length === 0) { grid.innerHTML = "<p style='color:#888;'>No shreddable fish in inventory.</p>"; document.getElementById('shred-btn').innerText = `SHRED SELECTED (0)`; return; }
-        
-        shreddableFish.forEach((f, i) => { 
-            const isSelected = shredSelection.includes(i);
-            grid.innerHTML += `<div class="card rarity-${f.id}" style="border: 2px solid ${isSelected ? '#ff4444' : 'transparent'}; opacity: ${isSelected ? 1 : 0.6}" onclick="toggleShredSelect(${i})"><strong>${f.name}</strong><br><span style="color:#aaa;">Val: $${f.value}</span></div>`; 
-        });
+        shreddableFish.forEach((f, i) => { const isSelected = shredSelection.includes(i); grid.innerHTML += `<div class="card rarity-${f.id}" style="border: 2px solid ${isSelected ? '#ff4444' : 'transparent'}; opacity: ${isSelected ? 1 : 0.6}" onclick="toggleShredSelect(${i})"><strong>${f.name}</strong><br><span style="color:#aaa;">Val: $${f.value}</span></div>`; });
         document.getElementById('shred-btn').innerText = `SHRED SELECTED (${shredSelection.length})`;
     }
     window.toggleShredSelect = function(index) { const pos = shredSelection.indexOf(index); if (pos > -1) shredSelection.splice(pos, 1); else shredSelection.push(index); renderShredderInventory(); }
     window.shredSelectedFish = function() {
         if(shredSelection.length === 0) return; closeModal('shredder-modal');
-        let shreddableFish = inventory.filter(f => f.id !== 'Mutant' && f.id !== 'Candy');
+        let shreddableFish = inventory.filter(f => f.id !== 'Mutant' && f.id !== 'Candy' && f.id !== 'Undead');
         let toShred = shreddableFish.filter((_, i) => shredSelection.includes(i));
-        
-        inventory = inventory.filter(f => f.id === 'Mutant' || f.id === 'Candy' || !toShred.includes(f));
+        inventory = inventory.filter(f => f.id === 'Mutant' || f.id === 'Candy' || f.id === 'Undead' || !toShred.includes(f));
         pendingBones = toShred.reduce((sum, f) => sum + Math.max(1, Math.floor(f.value / 10)), 0); saveGame();
-        
         isShreddingActive = true; shredTimer = 2.0; state = 'shredding'; actionBtn.innerText = 'SHREDDING...'; actionBtn.style.background = '#888';
     }
     function grabBones() { bones += pendingBones; pendingBones = 0; visualBones.visible = false; saveGame(); showAlert(`Collected Bones!`, "#ba68c8"); actionBtn.innerText = 'SHREDDER'; actionBtn.style.background = 'linear-gradient(135deg, #555, #888)'; }
@@ -850,22 +894,7 @@
         } else {
             trophyFishMeshes.forEach(mesh => { mesh.rotation.y += 1.0 * dt; mesh.rotation.z = Math.sin(time * 2) * 0.1; });
 
-            if (currentRodModel) {
-                const bolts = currentRodModel.getObjectByName('lightningBolts');
-                if (bolts) {
-                    bolts.visible = Math.random() > 0.4; 
-                    if (bolts.visible) {
-                        bolts.children.forEach(line => {
-                            const pos = line.geometry.attributes.position.array;
-                            for (let i = 3; i < pos.length - 3; i += 3) {
-                                pos[i] = (Math.random() - 0.5) * 0.2; 
-                                pos[i+2] = (Math.random() - 0.5) * 0.2; 
-                            }
-                            line.geometry.attributes.position.needsUpdate = true;
-                        });
-                    }
-                }
-            }
+            if (currentRodModel) { const bolts = currentRodModel.getObjectByName('lightningBolts'); if (bolts) { bolts.visible = Math.random() > 0.4; if (bolts.visible) { bolts.children.forEach(line => { const pos = line.geometry.attributes.position.array; for (let i = 3; i < pos.length - 3; i += 3) { pos[i] = (Math.random() - 0.5) * 0.2; pos[i+2] = (Math.random() - 0.5) * 0.2; } line.geometry.attributes.position.needsUpdate = true; }); } } }
 
             if (state === 'idle' || state.startsWith('near_')) {
                 let mX = moveVector.x, mY = -moveVector.y;
@@ -885,17 +914,13 @@
                     else if (cPos.distanceTo(new THREE.Vector2(0, 8)) < 4) { state = 'near_shredder'; if(pendingBones > 0) { actionBtn.innerText = 'GRAB BONES'; actionBtn.style.background = 'linear-gradient(135deg, #ba68c8, #7b1fa2)'; } else { actionBtn.innerText = 'SHREDDER'; actionBtn.style.background = 'linear-gradient(135deg, #555, #888)'; } msg.innerText = 'Shredder'; msg.style.display = 'block'; }
                     else if (cPos.distanceTo(new THREE.Vector2(6, 8)) < 3) { state = 'near_travel'; actionBtn.innerText = 'FERRY'; actionBtn.style.background = '#ba68c8'; msg.innerText = 'Island Ferry'; msg.style.display = 'block'; }
                     else { if(state.startsWith('near_')) state = 'idle'; actionBtn.innerText = 'CAST'; actionBtn.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)'; msg.style.display = 'none'; }
-                } else if (currentLocation === 'mutant' || currentLocation === 'candy') {
+                } else if (currentLocation !== 'main') {
                     if (cPos.distanceTo(new THREE.Vector2(0, -5)) < 4) { state = 'near_teleport'; actionBtn.innerText = 'TELEPORT'; actionBtn.style.background = '#00c6ff'; msg.innerText = 'Return Home'; msg.style.display = 'block'; }
                     else { if(state.startsWith('near_')) state = 'idle'; actionBtn.innerText = 'CAST'; actionBtn.style.background = 'linear-gradient(135deg, #00c6ff, #0072ff)'; msg.style.display = 'none'; }
                 }
             }
 
-            if (isShreddingActive) {
-                shredTimer -= dt; shredderGroup.position.x = Math.sin(time * 50) * 0.1; redButtonBase.scale.setScalar(1.0 + Math.sin(time * 20) * 0.2); 
-                if (shredTimer <= 0) { isShreddingActive = false; shredderGroup.position.set(0, 0.5, 8); redButtonBase.scale.setScalar(1.0); visualBones.visible = true; state = 'idle'; showAlert("Shredding Complete!", "#fff"); }
-            }
-
+            if (isShreddingActive) { shredTimer -= dt; shredderGroup.position.x = Math.sin(time * 50) * 0.1; redButtonBase.scale.setScalar(1.0 + Math.sin(time * 20) * 0.2); if (shredTimer <= 0) { isShreddingActive = false; shredderGroup.position.set(0, 0.5, 8); redButtonBase.scale.setScalar(1.0); visualBones.visible = true; state = 'idle'; showAlert("Shredding Complete!", "#fff"); } }
             if(equipMouse) { mouseGroup.position.set(Math.sin(time * 1.5) * 4, 1.05, Math.cos(time * 1.5) * 4); mouseGroup.lookAt(Math.sin((time+0.1) * 1.5) * 4, 1.05, Math.cos((time+0.1) * 1.5) * 4); }
 
             const tipPosWorld = new THREE.Vector3(); rodTipBone.getWorldPosition(tipPosWorld);
