@@ -211,16 +211,16 @@
         ['Galactic Angler','Exotic',7500,'#000','#ff00ff',2,[0.7, 0.8, 1.2],2.0], ['Void Ray','Exotic',8000,'#111','#4b0082',3,[1.5, 0.1, 1.5],2.5],
         ['Nebula Dragonfish','Exotic',10000,'#ff1493','#00ffff',1,[0.4, 0.5, 2.2],3.0],
         ['Mutant Fish','Mutant',5000,'#90ee90','#006400',2,[0.8, 0.7, 1.4],2.5],
-        ['Toxic Fish','Mutant',7525,'#ffff00','#00ff00',2,[0.7, 0.6, 1.3],2.2],
-        ['Mutant HornFish','Mutant',8800,'#90ee90','#006400',2,[0.8, 0.8, 1.5],2.8],
-        ['Nebula Mutant Fish','Mutant',10000,'#90ee90','#800080',4,[0.9, 0.8, 1.6],3.0],
-        ['Nebula Mutant HornFish','Mutant',14500,'#90ee90','#800080',4,[0.9, 0.9, 1.7],3.5],
+        ['Toxic Fish','Mutant',5000,'#ffff00','#00ff00',2,[0.7, 0.6, 1.3],2.2],
+        ['Mutant HornFish','Mutant',6700,'#90ee90','#006400',2,[0.8, 0.8, 1.5],2.8],
+        ['Nebula Mutant Fish','Mutant',8000,'#90ee90','#800080',4,[0.9, 0.8, 1.6],3.0],
+        ['Nebula Mutant HornFish','Mutant',10500,'#90ee90','#800080',4,[0.9, 0.9, 1.7],3.5],
         
-        ['Candy Fish','Candy',7500,'#ffb6c1','#add8e6',1,[0.6, 0.5, 1.2],1.0],
-        ['Chocolate Fish','Candy',8750,'#8b4513','#d2b48c',1,[0.7, 0.6, 1.3],1.2],
-        ['Candy Cane Fish','Candy',10000,'#ff0000','#ffffff',1,[0.5, 0.4, 1.5],1.1],
-        ['Sourfish','Candy',12000,'#4169e1','#00008b',2,[0.4, 0.5, 1.1],0.9],
-        ['Glowing Sourfish','Candy',15000,'#00ffff','#0000cd',2,[0.5, 0.6, 1.2],1.0]
+        ['Candy Fish','Candy',5000,'#ffb6c1','#add8e6',1,[0.6, 0.5, 1.2],1.0],
+        ['Chocolate Fish','Candy',5000,'#8b4513','#d2b48c',1,[0.7, 0.6, 1.3],1.2],
+        ['Candy Cane Fish','Candy',5000,'#ff0000','#ffffff',1,[0.5, 0.4, 1.5],1.1],
+        ['Sourfish','Candy',8000,'#4169e1','#00008b',2,[0.4, 0.5, 1.1],0.9],
+        ['Glowing Sourfish','Candy',12000,'#00ffff','#0000cd',2,[0.5, 0.6, 1.2],1.0]
     ];
 
     const fishDatabase = rawFishData.map(f => ({ 
@@ -232,8 +232,8 @@
     
     let inventory = [], money = 0, bones = 0, totalCaughtCount = 0;
     
-    let ownsBiggerRod = false, ownsMouse = false, ownsGlow = false, ownsMutantIsland = false, ownsCandyIsland = false;
-    let equipBiggerRod = false, equipMouse = false, equipGlow = false;
+    let ownsBiggerRod = false, ownsMouse = false, ownsGlow = false, ownsMutantIsland = false, ownsCandyIsland = false, ownsBetterBait = false;
+    let equipBiggerRod = false, equipMouse = false, equipGlow = false, equipBetterBait = false;
     let currentLocation = 'main'; 
     
     let topCatches = []; 
@@ -261,8 +261,8 @@
         const data = { 
             money, bones, inventory, fishIndex, totalCaughtCount, 
             rodsOwned: rods.map(r=>r.owned), currentRodIndex, 
-            ownsBiggerRod, ownsMouse, ownsGlow, ownsMutantIsland, ownsCandyIsland, currentLocation,
-            equipBiggerRod, equipMouse, equipGlow,
+            ownsBiggerRod, ownsMouse, ownsGlow, ownsMutantIsland, ownsCandyIsland, ownsBetterBait, currentLocation,
+            equipBiggerRod, equipMouse, equipGlow, equipBetterBait,
             topCatches, usedCodes
         };
         localStorage.setItem('ultimateFishingSave', JSON.stringify(data));
@@ -282,8 +282,8 @@
                 currentRodIndex = data.currentRodIndex || 0;
                 
                 ownsBiggerRod = data.ownsBiggerRod || false; ownsMouse = data.ownsMouse || false; ownsGlow = data.ownsGlow || false; 
-                ownsMutantIsland = data.ownsMutantIsland || false; ownsCandyIsland = data.ownsCandyIsland || false;
-                equipBiggerRod = data.equipBiggerRod || false; equipMouse = data.equipMouse || false; equipGlow = data.equipGlow || false;
+                ownsMutantIsland = data.ownsMutantIsland || false; ownsCandyIsland = data.ownsCandyIsland || false; ownsBetterBait = data.ownsBetterBait || false;
+                equipBiggerRod = data.equipBiggerRod || false; equipMouse = data.equipMouse || false; equipGlow = data.equipGlow || false; equipBetterBait = data.equipBetterBait || false;
                 
                 currentLocation = data.currentLocation || 'main';
                 topCatches = data.topCatches || [];
@@ -421,14 +421,11 @@
     // --- CANDY ISLAND GROUP ---
     const candyIslandGroup = new THREE.Group();
     scene.add(candyIslandGroup);
-    // Swapped pink material out for standard dock wood material!
     const candyDockMat = dockWoodMat;
     const candyDock = new THREE.Mesh(new THREE.BoxGeometry(20, 1, 20), candyDockMat);
     candyDock.receiveShadow = true; candyDock.castShadow = true; candyIslandGroup.add(candyDock);
     const candyTeleporter = new THREE.Group(); candyTeleporter.position.set(0, 0.5, -5); 
-    // Matched pad base to mutant island
     const cPad = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 0.2, 32), new THREE.MeshStandardMaterial({color: 0x000000, metalness: 0.9})); cPad.position.y = 0.1; candyTeleporter.add(cPad);
-    // Matched ring to mutant island neon blue
     const cGlow = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x00c6ff, emissive: 0x00c6ff, emissiveIntensity: 2.0})); cGlow.rotation.x = Math.PI/2; cGlow.position.y = 0.2; candyTeleporter.add(cGlow);
     candyIslandGroup.add(candyTeleporter);
 
@@ -445,7 +442,7 @@
             water.material.color.setHex(0x90ee90); sand.material.color.setHex(0x002200);
             scene.background = new THREE.Color(0x204020); scene.fog = new THREE.FogExp2(0x204020, 0.03);
         } else if (currentLocation === 'candy') {
-            water.material.color.setHex(0xff99cc); sand.material.color.setHex(0xffffff); // Pink water, sugar white sand
+            water.material.color.setHex(0xff99cc); sand.material.color.setHex(0xffffff); 
             scene.background = new THREE.Color(0xffe6f2); scene.fog = new THREE.FogExp2(0xffe6f2, 0.02);
         }
     }
@@ -490,10 +487,9 @@
         const group = new THREE.Group();
         const mat = new THREE.MeshStandardMaterial({ map: generateFishPattern(fishData.c1, fishData.c2, fishData.pat), metalness: 0.2, roughness: 0.7 });
         
-        // Glow logic for specific fish
         if (fishData.name === 'Glowing Sourfish') {
             mat.emissive = new THREE.Color(0x00ffff);
-            mat.emissiveIntensity = 0.4; // Subtle base glow
+            mat.emissiveIntensity = 0.4;
             const glowLight = new THREE.PointLight(0x00ffff, 1.0, 4);
             group.add(glowLight);
         }
@@ -539,7 +535,6 @@
         const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.15, 16), reelMat); reel.rotation.x = Math.PI/2; reel.position.set(0, 0.2, 0.05); rodGroup.add(reel);
         rodTipBone.position.set(0, 2.5, 0); rodGroup.add(rodTipBone); 
         
-        // LIGHTNING EFFECT FOR GOLDEN ROD
         if (rodData.id === 'golden') {
             const lightningGroup = new THREE.Group();
             lightningGroup.name = 'lightningBolts';
@@ -550,7 +545,7 @@
                 const geo = new THREE.BufferGeometry().setFromPoints(pts);
                 lightningGroup.add(new THREE.Line(geo, boltMat));
             }
-            lightningGroup.position.y = 0.5; // center on pole
+            lightningGroup.position.y = 0.5;
             rodGroup.add(lightningGroup);
         }
 
@@ -629,18 +624,28 @@
         document.getElementById('minigame-container').style.display = 'block'; document.getElementById('progress-container').style.display = 'block';
         
         const rod = rods[currentRodIndex];
+        let possibleFish = [];
 
         if (currentLocation === 'mutant') {
-            const possibleFish = fishDatabase.filter(f => f.id === 'Mutant');
-            targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
+            possibleFish = fishDatabase.filter(f => f.id === 'Mutant');
         } else if (currentLocation === 'candy') {
-            const possibleFish = fishDatabase.filter(f => f.id === 'Candy');
-            targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
+            possibleFish = fishDatabase.filter(f => f.id === 'Candy');
         } else {
             let mathExp = equipBiggerRod ? 2.2 : 2.5; 
             let caughtTier = Math.floor(rod.minTier + (Math.pow(Math.random(), mathExp) * ((rod.maxTier - rod.minTier) + 0.99))); 
             caughtTier = Math.min(caughtTier, rod.maxTier);
-            const possibleFish = fishDatabase.filter(f => f.id === rarities[caughtTier].id);
+            possibleFish = fishDatabase.filter(f => f.id === rarities[caughtTier].id);
+        }
+
+        // --- BETTER BAIT LOGIC ---
+        if (equipBetterBait) {
+            const uncaughtFish = possibleFish.filter(f => fishIndex[f.name] === 0);
+            if (uncaughtFish.length > 0 && Math.random() <= 0.33) {
+                targetFish = uncaughtFish[Math.floor(Math.random() * uncaughtFish.length)];
+            } else {
+                targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
+            }
+        } else {
             targetFish = possibleFish[Math.floor(Math.random() * possibleFish.length)];
         }
         
@@ -764,9 +769,11 @@
     function openShop() {
         openModal('shop-modal'); document.getElementById('total-caught-text').innerText = `${totalCaughtCount}/${fishDatabase.length}`;
         const upGrid = document.getElementById('upgrade-shop-grid'); upGrid.innerHTML = '';
-        upGrid.innerHTML += getUpgradeBtnHTML(ownsBiggerRod, equipBiggerRod, 'rod', 25, 'Bigger Rod', '+25% Size, +10% Better Fish');
-        upGrid.innerHTML += getUpgradeBtnHTML(ownsMouse, equipMouse, 'mouse', 50, 'Pet Mouse', 'Runs around, 10% Shop Discount');
-        upGrid.innerHTML += getUpgradeBtnHTML(ownsGlow, equipGlow, 'glow', 50, 'Glowing Rods', 'Makes basic rods glow 5x cooler!');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsBiggerRod, equipBiggerRod, 'rod', 250, 'Underwater Upgrades', '+25% Bigger Rod, +10% Better Fish');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsMouse, equipMouse, 'mouse', 250, 'Merchants Friend?', '10% Shop Discounts For All Rods');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsGlow, equipGlow, 'glow', 50, 'The Light', 'Makes fishing rods glow!');
+        upGrid.innerHTML += getUpgradeBtnHTML(ownsBetterBait, equipBetterBait, 'bait', 1250, 'One With The Fish', '+33% chance to hook an uncaught fish');
+        
         const shopGrid = document.getElementById('rod-shop-grid'); shopGrid.innerHTML = '';
         rods.forEach((r, i) => {
             if (r.hidden && !r.owned) return; 
@@ -788,8 +795,8 @@
 
     window.buyRod = function(index, cost) { if(money >= cost) { money -= cost; rods[index].owned = true; saveGame(); equipRod(index); showAlert("Purchased!", "#38ef7d"); } else showAlert("Not enough money!", "#ff4444"); }
     window.equipRod = function(index) { currentRodIndex = index; buildRodModel(); saveGame(); openShop(); }
-    window.buyUpgrade = function(type, cost) { if(bones >= cost) { bones -= cost; if(type === 'rod') { ownsBiggerRod = true; equipBiggerRod = true; buildRodModel(); } if(type === 'mouse') { ownsMouse = true; equipMouse = true; } if(type === 'glow') { ownsGlow = true; equipGlow = true; buildRodModel(); } saveGame(); openShop(); showAlert("Upgrade Unlocked!", "#ba68c8"); } else { showAlert("Not enough bones!", "#ff4444"); } }
-    window.toggleEquip = function(type) { if(type === 'rod') { equipBiggerRod = !equipBiggerRod; buildRodModel(); } if(type === 'mouse') { equipMouse = !equipMouse; mouseGroup.visible = false; } if(type === 'glow') { equipGlow = !equipGlow; buildRodModel(); } saveGame(); openShop(); }
+    window.buyUpgrade = function(type, cost) { if(bones >= cost) { bones -= cost; if(type === 'rod') { ownsBiggerRod = true; equipBiggerRod = true; buildRodModel(); } if(type === 'mouse') { ownsMouse = true; equipMouse = true; } if(type === 'glow') { ownsGlow = true; equipGlow = true; buildRodModel(); } if(type === 'bait') { ownsBetterBait = true; equipBetterBait = true; } saveGame(); openShop(); showAlert("Upgrade Unlocked!", "#ba68c8"); } else { showAlert("Not enough bones!", "#ff4444"); } }
+    window.toggleEquip = function(type) { if(type === 'rod') { equipBiggerRod = !equipBiggerRod; buildRodModel(); } if(type === 'mouse') { equipMouse = !equipMouse; mouseGroup.visible = false; } if(type === 'glow') { equipGlow = !equipGlow; buildRodModel(); } if(type === 'bait') { equipBetterBait = !equipBetterBait; } saveGame(); openShop(); }
 
     function openSell() { openModal('sell-modal'); const grid = document.getElementById('inventory-grid'); grid.innerHTML = ''; if(inventory.length === 0) { grid.innerHTML = "<p style='color:#888;'>Inventory empty.</p>"; return; } inventory.forEach(f => { grid.innerHTML += `<div class="card rarity-${f.id}"><strong>${f.name}</strong><br><span style="color:#38ef7d;">$${f.value}</span></div>`; }); }
     window.sellAllFish = function() { if(inventory.length === 0) return; let earned = inventory.reduce((sum, f) => sum + f.value, 0); money += earned; inventory = []; saveGame(); openSell(); showAlert(`Sold for $${earned.toLocaleString()}!`, "#38ef7d"); }
@@ -843,11 +850,10 @@
         } else {
             trophyFishMeshes.forEach(mesh => { mesh.rotation.y += 1.0 * dt; mesh.rotation.z = Math.sin(time * 2) * 0.1; });
 
-            // Lightning Bolt Logic
             if (currentRodModel) {
                 const bolts = currentRodModel.getObjectByName('lightningBolts');
                 if (bolts) {
-                    bolts.visible = Math.random() > 0.4; // rapid flicker
+                    bolts.visible = Math.random() > 0.4; 
                     if (bolts.visible) {
                         bolts.children.forEach(line => {
                             const pos = line.geometry.attributes.position.array;
