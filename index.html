@@ -275,6 +275,7 @@
     // --- AQUARIUM STATE ---
     let aquariumFish = []; // Array of { name, date, value, dateAdded }
     let fishFirstCatch = {}; // Map of fish name -> { date, value }
+    let aquariumUnlocked = []; // Array of fish names that are available for the aquarium
     let aquariumSortMode = 'newest';
 
     const rarities = [
@@ -303,7 +304,7 @@
             ownsMutantIsland, ownsCandyIsland, ownsSkullIsland, ownsAquariumIsland, currentLocation,
             equipBiggerRod, equipMouse, equipGlow, equipBetterBait,
             topCatches, usedCodes,
-            aquariumFish, fishFirstCatch
+            aquariumFish, fishFirstCatch, aquariumUnlocked
         };
         localStorage.setItem('ultimateFishingSave', JSON.stringify(data));
         updateHUD();
@@ -332,6 +333,16 @@
                 
                 aquariumFish = data.aquariumFish || [];
                 fishFirstCatch = data.fishFirstCatch || {};
+                aquariumUnlocked = data.aquariumUnlocked || [];
+                
+                // If aquariumUnlocked is empty but we have fishIndex entries, populate it for old saves
+                if (aquariumUnlocked.length === 0) {
+                    for (const name in fishIndex) {
+                        if (fishIndex[name] > 0) {
+                            aquariumUnlocked.push(name);
+                        }
+                    }
+                }
             } catch(e) { console.error("Corrupted save data."); }
         }
     }
@@ -445,7 +456,7 @@
 
     function updateSign() {
         if(activeSignSprite) travelSignGroup.remove(activeSignSprite);
-        let lines = ["EXOTIC FERRIES", "Travel To Your Aquarium", "Also Travel To Special Islands!"];
+        let lines = ["EXOTIC FERRIES", "Visit Aquarium Island", "& Visit Special Islands!"];
         activeSignSprite = generateTextSprite(lines, 24, 1.6);
         activeSignSprite.position.z = 0.12; travelSignGroup.add(activeSignSprite);
     }
@@ -926,6 +937,10 @@
         if(isFirstCatch) {
             const dateStr = new Date().toLocaleDateString();
             fishFirstCatch[targetFish.name] = { date: dateStr, value: actualValue };
+            // Add to aquarium unlocked list
+            if (!aquariumUnlocked.includes(targetFish.name)) {
+                aquariumUnlocked.push(targetFish.name);
+            }
         }
         
         const caughtDateStr = new Date().toLocaleDateString(); 
@@ -1009,23 +1024,20 @@
         const grid = document.getElementById('aquarium-fish-grid');
         grid.innerHTML = '';
         
-        // Get all caught fish (fishIndex > 0) with their first catch data
+        // Get all fish that are unlocked for aquarium (from aquariumUnlocked list)
         let caughtFish = [];
-        for (const name in fishIndex) {
-            if (fishIndex[name] > 0) {
-                const fishData = fishDatabase.find(f => f.name === name);
-                if (!fishData) continue;
-                const firstCatch = fishFirstCatch[name] || { date: 'Unknown', value: 0 };
-                // If firstCatch value is 0 but we have a value from the fishData, use the base value as fallback
-                const value = firstCatch.value > 0 ? firstCatch.value : fishData.baseVal;
-                caughtFish.push({
-                    name: name,
-                    date: firstCatch.date || 'Unknown',
-                    value: value,
-                    fishData: fishData,
-                    inAquarium: aquariumFish.some(f => f.name === name)
-                });
-            }
+        for (const name of aquariumUnlocked) {
+            const fishData = fishDatabase.find(f => f.name === name);
+            if (!fishData) continue;
+            const firstCatch = fishFirstCatch[name] || { date: 'Unknown', value: 0 };
+            const value = firstCatch.value > 0 ? firstCatch.value : fishData.baseVal;
+            caughtFish.push({
+                name: name,
+                date: firstCatch.date || 'Unknown',
+                value: value,
+                fishData: fishData,
+                inAquarium: aquariumFish.some(f => f.name === name)
+            });
         }
         
         // Sort
@@ -1048,7 +1060,7 @@
         }
         
         if (caughtFish.length === 0) {
-            grid.innerHTML = `<p style="color:#888; grid-column:1/-1; text-align:center;">You haven't caught any fish yet. Go fishing!</p>`;
+            grid.innerHTML = `<p style="color:#888; grid-column:1/-1; text-align:center;">No fish available for the aquarium. Catch some fish to unlock them!</p>`;
             return;
         }
         
@@ -1128,8 +1140,22 @@
         const c = code.toLowerCase().trim();
         if (c === "reset") { if (confirm("Are you sure you want to completely reset your progress?")) { localStorage.removeItem('ultimateFishingSave'); location.reload(); } return; }
         if (usedCodes.includes(c)) { showAlert("Code already used!", "#ff4444"); return; }
+        
+        // Existing codes
         if (c === "mon3y") { money += 300000; usedCodes.push(c); showAlert("+ $300,000!", "#38ef7d"); }
         else if (c === "bonesfordays") { bones += 300000; usedCodes.push(c); showAlert("+ 300,000 Bones!", "#ba68c8"); }
+        // Aquarium delete code
+        else if (c === "aquariumdelete") {
+            // Clear aquarium and unlocked list, but keep fishIndex, inventory, topCatches, etc.
+            aquariumFish = [];
+            aquariumUnlocked = [];
+            // Also clear fishFirstCatch so no dates remain
+            fishFirstCatch = {};
+            saveGame();
+            updateAquariumCountDisplay();
+            updateAquariumFish();
+            showAlert("Aquarium has been wiped. Catch new fish to unlock them for the aquarium!", "#ff4444");
+        }
         else { showAlert("Invalid Code", "#ff4444"); return; }
         saveGame();
     }
